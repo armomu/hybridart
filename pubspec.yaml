@@ -31,6 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # GetX 状态管理、路由、依赖注入
+  get: ^4.6.6
+  
+  # GetStorage 本地存储
+  get_storage: ^2.1.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
