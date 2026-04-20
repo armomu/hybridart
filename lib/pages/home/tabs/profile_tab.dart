@@ -1,0 +1,184 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../routes/app_routes.dart';
+
+class ProfileTab extends StatelessWidget {
+  const ProfileTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('我的'),
+        actions: [
+          // 扫一扫按钮
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: '扫一扫',
+            onPressed: () {
+              // TODO: 触发扫码逻辑
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('扫一扫')),
+              );
+            },
+          ),
+          // 设置按钮
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: '设置',
+            onPressed: () => Get.toNamed(Routes.settings),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // 用户信息区域
+            _buildUserInfo(context),
+            const SizedBox(height: 16),
+            // 常用功能区域
+            _buildFeatureGrid(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserInfo(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.25),
+      ),
+      child: Row(
+        children: [
+          // 用户头像
+          CircleAvatar(
+            radius: 36,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.person, size: 40, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          // 用户名称信息
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '用户名称',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'ID: 10086',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureGrid(BuildContext context) {
+    final features = List.generate(
+      8,
+      (index) => _FeatureItem(
+        icon: _featureIcons[index],
+        label: '功能${index + 1}',
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 12),
+            child: Text(
+              '常用功能',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: features.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.85,
+            ),
+            itemBuilder: (context, index) {
+              return _buildFeatureCell(context, features[index]);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureCell(BuildContext context, _FeatureItem item) {
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('点击了 ${item.label}')),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              item.icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.label,
+            style: const TextStyle(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const List<IconData> _featureIcons = [
+    Icons.star_outline,
+    Icons.favorite_border,
+    Icons.history,
+    Icons.bookmark_border,
+    Icons.share_outlined,
+    Icons.download_outlined,
+    Icons.notifications_outlined,
+    Icons.help_outline,
+  ];
+}
+
+class _FeatureItem {
+  final IconData icon;
+  final String label;
+  const _FeatureItem({required this.icon, required this.label});
+}

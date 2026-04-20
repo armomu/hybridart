@@ -1,122 +1,162 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../routes/app_routes.dart';
-import '../../controllers/lifecycle_controller.dart';
-import 'widgets/lifecycle_logger_widget.dart';
-import 'widgets/lifecycle_test_widget.dart';
+import 'tabs/home_tab.dart';
+import 'tabs/short_video_tab.dart';
+import 'tabs/message_tab.dart';
+import 'tabs/profile_tab.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // 初始化控制器
-    final controller = Get.put(LifecycleController());
+  State<HomePage> createState() => _HomePageState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('生命周期测试中心'),
-        actions: [
-          // 主题切换按钮
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            onPressed: () => Get.toNamed(Routes.settings),
-          ),
-          // 设置按钮
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Get.toNamed(Routes.settings),
-          ),
-        ],
-      ),
-      body: Obx(() => Column(
-        children: [
-          // 控制面板
-          _buildControlPanel(controller),
+class _HomePageState extends State<HomePage> {
+  /// 当前激活的 navIndex（0=首页, 1=短视频, 2=+号, 3=消息, 4=我的）
+  int _currentIndex = 0;
 
-          // 生命周期日志显示区域
-          const Expanded(
-            flex: 1,
-            child: LifecycleLoggerWidget(),
-          ),
+  static const List<Widget> _pages = [
+    HomeTab(),
+    ShortVideoTab(),
+    MessageTab(),
+    ProfileTab(),
+  ];
 
-          // 子组件显示区域
-          Expanded(
-            flex: 1,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              color: context.theme.colorScheme.primaryContainer.withOpacity(0.3),
-              child: controller.showChildWidget.value
-                  ? LifecycleTestWidget(
-                      key: ValueKey('test_${controller.showChildWidget.value}'),
-                      title: controller.parentTitle.value,
-                    )
-                  : _buildEmptyState(),
-            ),
-          ),
-        ],
-      )),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed(Routes.lifecycleDetail),
-        icon: const Icon(Icons.info_outline),
-        label: const Text('详情'),
+  /// navIndex → 页面索引（+号占位不对应页面，跳过）
+  int _navIndexToPageIndex(int navIndex) {
+    if (navIndex < 2) return navIndex;
+    return navIndex - 1;
+  }
+
+  void _onTabTapped(int navIndex) {
+    if (navIndex == 2) {
+      _onPlusPressed();
+      return;
+    }
+    setState(() {
+      _currentIndex = navIndex;
+    });
+  }
+
+  void _onPlusPressed() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('点击了 + 按钮'),
+        duration: Duration(seconds: 1),
       ),
     );
   }
 
-  Widget _buildControlPanel(LifecycleController controller) {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _navIndexToPageIndex(_currentIndex),
+        children: _pages,
+      ),
+      bottomNavigationBar: _buildBottomNavBar(context),
+    );
+  }
+
+  Widget _buildBottomNavBar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey[200],
-      child: Column(
-        children: [
-          const Text(
-            '父组件控制面板',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 60,
+          child: Row(
             children: [
-              ElevatedButton(
-                onPressed: controller.toggleChildWidget,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-                child: Obx(() => Text(
-                  controller.showChildWidget.value ? '销毁子组件' : '创建子组件',
-                )),
+              _buildNavItem(
+                context,
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                label: '首页',
+                navIndex: 0,
               ),
-              ElevatedButton(
-                onPressed: controller.toggleParentTitle,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('更新父组件参数'),
+              _buildNavItem(
+                context,
+                icon: Icons.play_circle_outline,
+                activeIcon: Icons.play_circle,
+                label: '短视频',
+                navIndex: 1,
+              ),
+              // 中间 + 号按钮
+              _buildPlusItem(context),
+              _buildNavItem(
+                context,
+                icon: Icons.chat_bubble_outline,
+                activeIcon: Icons.chat_bubble,
+                label: '消息',
+                navIndex: 3,
+              ),
+              _buildNavItem(
+                context,
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: '我的',
+                navIndex: 4,
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Obx(() => Text('当前父组件标题: ${controller.parentTitle.value}')),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '子组件已销毁',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+  Widget _buildNavItem(
+    BuildContext context, {
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required int navIndex,
+  }) {
+    final bool isActive = _currentIndex == navIndex;
+    final color =
+        isActive ? Theme.of(context).colorScheme.primary : Colors.grey[600]!;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onTabTapped(navIndex),
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(isActive ? activeIcon : icon, color: color, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlusItem(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onTabTapped(2),
+        child: Center(
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.add, color: Colors.white, size: 26),
           ),
-        ],
+        ),
       ),
     );
   }
