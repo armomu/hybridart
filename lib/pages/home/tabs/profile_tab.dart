@@ -86,6 +86,12 @@ class ProfileTab extends StatelessWidget {
         label: '直播',
         onTap: () => Get.toNamed(Routes.live),
       ),
+      // 第二项：生命周期 Demo
+      _FeatureItem(
+        icon: Icons.recycling,
+        label: '生命周期',
+        onTap: () => Get.toNamed(Routes.lifecycleDemo),
+      ),
       _FeatureItem(
         icon: Icons.favorite_border,
         label: '收藏',
@@ -121,12 +127,6 @@ class ProfileTab extends StatelessWidget {
         label: '通知',
         onTap: () => ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('点击了 通知'))),
-      ),
-      _FeatureItem(
-        icon: Icons.help_outline,
-        label: '帮助',
-        onTap: () => ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('点击了 帮助'))),
       ),
     ];
 
