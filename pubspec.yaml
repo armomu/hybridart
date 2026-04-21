@@ -43,6 +43,12 @@ dependencies:
   # VLC 播放器，支持 rtmp 直播流
   flutter_vlc_player: ^7.4.1
 
+  # 蓝牙 BLE，支持扫描/连接/读写特征
+  flutter_blue_plus: ^1.35.3
+
+  # 文件选择（OTA 升级包选择）
+  file_picker: ^8.0.5
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6

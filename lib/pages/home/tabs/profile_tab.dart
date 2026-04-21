@@ -92,6 +92,12 @@ class ProfileTab extends StatelessWidget {
         label: '生命周期',
         onTap: () => Get.toNamed(Routes.lifecycleDemo),
       ),
+      // 第三项：充电桩管理
+      _FeatureItem(
+        icon: Icons.ev_station,
+        label: '充电桩',
+        onTap: () => Get.toNamed(Routes.charger),
+      ),
       _FeatureItem(
         icon: Icons.favorite_border,
         label: '收藏',
@@ -121,12 +127,6 @@ class ProfileTab extends StatelessWidget {
         label: '下载',
         onTap: () => ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('点击了 下载'))),
-      ),
-      _FeatureItem(
-        icon: Icons.notifications_outlined,
-        label: '通知',
-        onTap: () => ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('点击了 通知'))),
       ),
     ];
 
