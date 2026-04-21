@@ -16,7 +16,6 @@ class ProfileTab extends StatelessWidget {
             icon: const Icon(Icons.qr_code_scanner),
             tooltip: '扫一扫',
             onPressed: () {
-              // TODO: 触发扫码逻辑
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('扫一扫')),
               );
@@ -33,10 +32,8 @@ class ProfileTab extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 用户信息区域
             _buildUserInfo(context),
             const SizedBox(height: 16),
-            // 常用功能区域
             _buildFeatureGrid(context),
           ],
         ),
@@ -53,32 +50,24 @@ class ProfileTab extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 用户头像
           CircleAvatar(
             radius: 36,
             backgroundColor: Theme.of(context).colorScheme.primary,
             child: const Icon(Icons.person, size: 40, color: Colors.white),
           ),
           const SizedBox(width: 16),
-          // 用户名称信息
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   '用户名称',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'ID: 10086',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -90,13 +79,56 @@ class ProfileTab extends StatelessWidget {
   }
 
   Widget _buildFeatureGrid(BuildContext context) {
-    final features = List.generate(
-      8,
-      (index) => _FeatureItem(
-        icon: _featureIcons[index],
-        label: '功能${index + 1}',
+    final features = [
+      // 第一项：直播
+      _FeatureItem(
+        icon: Icons.live_tv,
+        label: '直播',
+        onTap: () => Get.toNamed(Routes.live),
       ),
-    );
+      _FeatureItem(
+        icon: Icons.favorite_border,
+        label: '收藏',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 收藏'))),
+      ),
+      _FeatureItem(
+        icon: Icons.history,
+        label: '历史',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 历史'))),
+      ),
+      _FeatureItem(
+        icon: Icons.bookmark_border,
+        label: '书签',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 书签'))),
+      ),
+      _FeatureItem(
+        icon: Icons.share_outlined,
+        label: '分享',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 分享'))),
+      ),
+      _FeatureItem(
+        icon: Icons.download_outlined,
+        label: '下载',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 下载'))),
+      ),
+      _FeatureItem(
+        icon: Icons.notifications_outlined,
+        label: '通知',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 通知'))),
+      ),
+      _FeatureItem(
+        icon: Icons.help_outline,
+        label: '帮助',
+        onTap: () => ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('点击了 帮助'))),
+      ),
+    ];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -131,11 +163,7 @@ class ProfileTab extends StatelessWidget {
 
   Widget _buildFeatureCell(BuildContext context, _FeatureItem item) {
     return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('点击了 ${item.label}')),
-        );
-      },
+      onTap: item.onTap,
       borderRadius: BorderRadius.circular(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -164,21 +192,16 @@ class ProfileTab extends StatelessWidget {
       ),
     );
   }
-
-  static const List<IconData> _featureIcons = [
-    Icons.star_outline,
-    Icons.favorite_border,
-    Icons.history,
-    Icons.bookmark_border,
-    Icons.share_outlined,
-    Icons.download_outlined,
-    Icons.notifications_outlined,
-    Icons.help_outline,
-  ];
 }
 
 class _FeatureItem {
   final IconData icon;
   final String label;
-  const _FeatureItem({required this.icon, required this.label});
+  final VoidCallback onTap;
+
+  const _FeatureItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
-import 'live_tab.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 数据模型
@@ -136,7 +135,7 @@ class ShortVideoTab extends StatefulWidget {
 
 class _ShortVideoTabState extends State<ShortVideoTab>
     with AutomaticKeepAliveClientMixin {
-  int _topTabIndex = 0; // 默认「直播」
+  int _topTabIndex = 1; // 默认「精选」
   late PageController _tabPageController;
 
   @override
@@ -145,7 +144,7 @@ class _ShortVideoTabState extends State<ShortVideoTab>
   @override
   void initState() {
     super.initState();
-    _tabPageController = PageController(initialPage: 0);
+    _tabPageController = PageController(initialPage: 1);
   }
 
   @override
@@ -176,8 +175,6 @@ class _ShortVideoTabState extends State<ShortVideoTab>
             setState(() => _topTabIndex = index);
           },
           children: [
-            // 直播
-            const LiveTab(),
             // 关注 — 与精选共用视频流
             _VideoFeedView(
                 controller: _getSharedFeedController(), tabIndex: _topTabIndex),
@@ -193,7 +190,7 @@ class _ShortVideoTabState extends State<ShortVideoTab>
   }
 
   PreferredSizeWidget _buildTopBar() {
-    const titles = ['直播', '关注', '精选', '同城'];
+    const titles = ['关注', '精选', '同城'];
 
     return AppBar(
       backgroundColor: Colors.transparent,

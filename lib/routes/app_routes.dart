@@ -2,12 +2,14 @@ import 'package:get/get.dart';
 import '../pages/home/home_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/lifecycle/lifecycle_detail_page.dart';
+import '../pages/live/live_page.dart';
 
 /// 路由名称常量
 abstract class Routes {
   static const String home = '/';
   static const String settings = '/settings';
   static const String lifecycleDetail = '/lifecycle-detail';
+  static const String live = '/live';
 }
 
 /// 路由配置
@@ -31,6 +33,12 @@ class AppPages {
       name: Routes.lifecycleDetail,
       page: () => const LifecycleDetailPage(),
       transition: Transition.cupertino,
+    ),
+    GetPage(
+      name: Routes.live,
+      page: () => const LivePage(),
+      transition: Transition.downToUp,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
   ];
 }
