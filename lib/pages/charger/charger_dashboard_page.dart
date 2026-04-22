@@ -21,8 +21,10 @@ class ChargerDashboardPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Obx(() => Text(
-                ctrl.connectedDevice.value?.platformName.isNotEmpty == true
-                    ? ctrl.connectedDevice.value!.platformName
+                ctrl.isConnected.value
+                    ? (ctrl.connectedDevice.value?.platformName.isNotEmpty == true
+                        ? ctrl.connectedDevice.value!.platformName
+                        : '充电桩设备')
                     : '充电桩控制台',
               )),
           centerTitle: true,

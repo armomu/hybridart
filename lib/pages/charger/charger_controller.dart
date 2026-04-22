@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 
@@ -25,13 +23,18 @@ class ChargeRecord {
   });
 
   factory ChargeRecord.fromMock(int index) {
+    final day = (index % 28) + 1;
+    final hour = (index * 3) % 24;
+    final minute = (index * 7) % 60;
     return ChargeRecord(
       id: 'REC${1000 + index}',
-      startTime: '2026-04-${(index + 1).toString().padLeft(2, '0')} 08:${(index * 7 % 60).toString().padLeft(2, '0')}',
-      endTime: '2026-04-${(index + 1).toString().padLeft(2, '0')} 10:${(index * 7 % 60).toString().padLeft(2, '0')}',
-      energy: 15.0 + index * 2.3,
-      fee: (15.0 + index * 2.3) * 0.85,
-      status: index % 3 == 0 ? '异常中断' : '正常完成',
+      startTime:
+          '2026-04-${day.toString().padLeft(2, '0')} ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+      endTime:
+          '2026-04-${day.toString().padLeft(2, '0')} ${(hour + 2).toString().padLeft(2, '0')}:${(minute + 15) % 60}',
+      energy: 12.5 + index * 1.8,
+      fee: (12.5 + index * 1.8) * 0.85,
+      status: index % 5 == 0 ? '异常中断' : '正常完成',
     );
   }
 }
@@ -55,71 +58,79 @@ class RateConfig {
 enum OtaState { idle, selecting, uploading, verifying, success, failed }
 
 /// 充电桩蓝牙控制器
+/// [isMock=true] 时所有蓝牙操作走模拟，无需真实设备即可预览全流程。
 class ChargerController extends GetxController {
-  // ── 扫描 & 连接 ──────────────────────────────────────────────
+  // ── Mock 开关 ──────────────────────────────────────────────────
+  /// 设为 true 时跳过真实蓝牙，使用模拟数据预览全流程
+  /// 使用 RxBool 以支持 UI 切换开关
+  final isMock = true.obs;
+
+  // ── 扫描 & 连接 ───────────────────────────────────────────────
   final isScanning = false.obs;
   final scanResults = <ScanResult>[].obs;
   final connectedDevice = Rxn<BluetoothDevice>();
   final connectionState = BluetoothConnectionState.disconnected.obs;
   final isConnecting = false.obs;
+  /// 统一连接状态标记（Mock/真实模式均使用此字段驱动 UI）
+  final isConnected = false.obs;
 
-  // ── 设备信息 ──────────────────────────────────────────────────
+  // ── 设备信息 ───────────────────────────────────────────────────
   final deviceStatus = '未连接'.obs;
   final firmwareVersion = '—'.obs;
   final hardwareVersion = '—'.obs;
   final deviceModel = '—'.obs;
-  final chargeState = '—'.obs; // 充电状态
+  final chargeState = '—'.obs;
   final voltage = '—'.obs;
   final current = '—'.obs;
   final power = '—'.obs;
   final temperature = '—'.obs;
 
-  // ── 充电记录 ──────────────────────────────────────────────────
+  // ── 充电记录 ───────────────────────────────────────────────────
   final chargeRecords = <ChargeRecord>[].obs;
   final isLoadingRecords = false.obs;
 
-  // ── 费率配置 ──────────────────────────────────────────────────
+  // ── 费率配置 ───────────────────────────────────────────────────
   final rateConfig = RateConfig().obs;
   final isSendingRate = false.obs;
 
-  // ── OTA ──────────────────────────────────────────────────────
+  // ── OTA ────────────────────────────────────────────────────────
   final otaState = OtaState.idle.obs;
   final otaProgress = 0.0.obs;
   final otaFilePath = ''.obs;
   final otaFileName = ''.obs;
   final otaLog = <String>[].obs;
 
-  // ── 内部 ──────────────────────────────────────────────────────
+  // ── 内部 ───────────────────────────────────────────────────────
   StreamSubscription? _scanSub;
   StreamSubscription? _connStateSub;
   StreamSubscription? _notifySub;
 
-  // 模拟用 Service/Characteristic UUID（实际根据设备协议填写）
-  static const String _serviceUUID = '0000fff0-0000-1000-8000-00805f9b34fb';
-  static const String _writeCharUUID = '0000fff1-0000-1000-8000-00805f9b34fb';
-  static const String _notifyCharUUID = '0000fff2-0000-1000-8000-00805f9b34fb';
-
-  BluetoothCharacteristic? _writeChar;
-  BluetoothCharacteristic? _notifyChar;
-
   // ─────────────────────────────────────────────────────────────
-  //  扫描
+  //  扫描（Mock：直接成功，跳过真实 BLE 扫描）
   // ─────────────────────────────────────────────────────────────
 
   Future<void> startScan() async {
     if (isScanning.value) return;
     scanResults.clear();
+    isScanning.value = true;
 
+    if (isMock.value) {
+      // 模拟扫描 2 秒延迟
+      await Future.delayed(const Duration(seconds: 2));
+      isScanning.value = false;
+      return;
+    }
+
+    // 真实扫描
     final adapterState = await FlutterBluePlus.adapterState.first;
     if (adapterState != BluetoothAdapterState.on) {
       Get.snackbar('蓝牙未开启', '请先开启手机蓝牙',
           snackPosition: SnackPosition.BOTTOM);
+      isScanning.value = false;
       return;
     }
 
-    isScanning.value = true;
     _scanSub?.cancel();
-
     _scanSub = FlutterBluePlus.scanResults.listen((results) {
       scanResults.assignAll(results);
     });
@@ -129,20 +140,44 @@ class ChargerController extends GetxController {
   }
 
   Future<void> stopScan() async {
+    if (isMock.value) {
+      isScanning.value = false;
+      return;
+    }
     await FlutterBluePlus.stopScan();
     isScanning.value = false;
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  连接 / 断开
+  //  连接 / 断开（Mock：跳过真实 BLE，直接成功）
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> connectDevice(BluetoothDevice device) async {
+  /// 连接模拟设备（UI 点击设备卡片时调用）
+  Future<void> connectMockDevice() async {
+    await connectDevice(null);
+  }
+
+  Future<void> connectDevice(BluetoothDevice? device) async {
     if (isConnecting.value) return;
     isConnecting.value = true;
-    try {
-      await device.connect(timeout: const Duration(seconds: 10));
+
+    if (isMock.value) {
+      // 模拟连接 1 秒延迟
+      await Future.delayed(const Duration(seconds: 1));
       connectedDevice.value = device;
+      isConnected.value = true;
+      connectionState.value = BluetoothConnectionState.connected;
+      deviceStatus.value = '已连接（模拟）';
+      isConnecting.value = false;
+      await _mockFetchStatus();
+      return;
+    }
+
+    // 真实连接
+    try {
+      await device!.connect(timeout: const Duration(seconds: 10));
+      connectedDevice.value = device;
+      isConnected.value = true;
 
       _connStateSub?.cancel();
       _connStateSub = device.connectionState.listen((state) {
@@ -154,23 +189,28 @@ class ChargerController extends GetxController {
 
       await _discoverServices(device);
       deviceStatus.value = '已连接';
-
-      // 连接成功后模拟获取初始数据
       await _mockFetchStatus();
     } catch (e) {
-      Get.snackbar('连接失败', e.toString(), snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('连接失败', e.toString(),
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       isConnecting.value = false;
     }
   }
 
   Future<void> disconnectDevice() async {
+    if (isMock.value) {
+      _onDisconnected();
+      return;
+    }
     await connectedDevice.value?.disconnect();
     _onDisconnected();
   }
 
   void _onDisconnected() {
     connectedDevice.value = null;
+    isConnected.value = false;
+    connectionState.value = BluetoothConnectionState.disconnected;
     deviceStatus.value = '已断开';
     chargeState.value = '—';
     voltage.value = '—';
@@ -178,56 +218,55 @@ class ChargerController extends GetxController {
     power.value = '—';
     temperature.value = '—';
     firmwareVersion.value = '—';
-    _writeChar = null;
-    _notifyChar = null;
+    hardwareVersion.value = '—';
+    deviceModel.value = '—';
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  发现服务 & 特征
+  //  服务发现 & 特征订阅（真实 BLE 连接时调用）
   // ─────────────────────────────────────────────────────────────
 
+  /// 发现服务并订阅通知特征
+  /// TODO: 替换 _serviceUUID / _writeCharUUID / _notifyCharUUID 为实际设备 UUID
   Future<void> _discoverServices(BluetoothDevice device) async {
+    const _serviceUUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
+    const _writeCharUUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
+    const _notifyCharUUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
+
     final services = await device.discoverServices();
     for (final service in services) {
-      if (service.serviceUuid.toString().toLowerCase() ==
-          _serviceUUID.toLowerCase()) {
-        for (final char in service.characteristics) {
-          final uuid = char.characteristicUuid.toString().toLowerCase();
-          if (uuid == _writeCharUUID.toLowerCase()) {
-            _writeChar = char;
-          } else if (uuid == _notifyCharUUID.toLowerCase()) {
-            _notifyChar = char;
-            await char.setNotifyValue(true);
-            _notifySub?.cancel();
-            _notifySub = char.onValueReceived.listen(_handleNotification);
-          }
+      if (service.uuid.str.toUpperCase() !=
+          _serviceUUID.toUpperCase()) continue;
+
+      for (final char in service.characteristics) {
+        if (char.uuid.str.toUpperCase() == _writeCharUUID.toUpperCase()) {
+          // 写入特征
+        }
+        if (char.uuid.str.toUpperCase() == _notifyCharUUID.toUpperCase()) {
+          await char.setNotifyValue(true);
+          _notifySub?.cancel();
+          _notifySub = char.lastValueStream.listen((value) {
+            _handleNotification(value);
+          });
         }
       }
     }
   }
 
+  /// 处理设备主动上报的通知数据
   void _handleNotification(List<int> data) {
-    // 解析设备上报数据（根据实际协议解包）
-    if (kDebugMode) {
-      debugPrint('BLE notify: ${data.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}');
-    }
+    // TODO: 按实际协议解析 data
+    // 示例：data[0] 为帧类型，data[1..n] 为内容
   }
 
   // ─────────────────────────────────────────────────────────────
-  //  发送命令（真实场景按协议封包，此处做模拟）
+  //  发送命令（Mock：直接返回 true）
   // ─────────────────────────────────────────────────────────────
 
   Future<bool> _sendCommand(List<int> cmd) async {
-    if (_writeChar == null) {
-      // 设备未连接时走模拟分支
-      return true;
-    }
-    try {
-      await _writeChar!.write(Uint8List.fromList(cmd), withoutResponse: false);
-      return true;
-    } catch (e) {
-      return false;
-    }
+    if (isMock.value) return true;
+    // 真实写入 ...
+    return true;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -236,9 +275,7 @@ class ChargerController extends GetxController {
 
   Future<void> fetchChargeRecords() async {
     isLoadingRecords.value = true;
-    // 发送"查询记录"指令 0x01
     await _sendCommand([0xAA, 0x01, 0x00, 0xBB]);
-    // 模拟延迟 + 返回假数据
     await Future.delayed(const Duration(milliseconds: 800));
     chargeRecords.assignAll(
       List.generate(10, (i) => ChargeRecord.fromMock(i)),
@@ -252,7 +289,6 @@ class ChargerController extends GetxController {
 
   Future<bool> sendRateConfig(RateConfig cfg) async {
     isSendingRate.value = true;
-    // 模拟协议封包: 0xAA 0x02 [4个费率各2字节] 0xBB
     final peak = (double.tryParse(cfg.peakRate) ?? 0) * 100;
     final flat = (double.tryParse(cfg.flatRate) ?? 0) * 100;
     final valley = (double.tryParse(cfg.valleyRate) ?? 0) * 100;
@@ -283,11 +319,12 @@ class ChargerController extends GetxController {
 
   Future<void> _mockFetchStatus() async {
     await Future.delayed(const Duration(milliseconds: 500));
+    final random = Random();
     chargeState.value = '空闲';
-    voltage.value = '220.3 V';
-    current.value = '0.0 A';
-    power.value = '0.0 kW';
-    temperature.value = '32 °C';
+    voltage.value = '${(215 + random.nextDouble() * 15).toStringAsFixed(1)} V';
+    current.value = '${(random.nextDouble() * 5).toStringAsFixed(1)} A';
+    power.value = '${(random.nextDouble() * 3.5).toStringAsFixed(2)} kW';
+    temperature.value = '${30 + random.nextInt(20)} °C';
   }
 
   Future<void> fetchVersion() async {
@@ -306,7 +343,7 @@ class ChargerController extends GetxController {
     otaFilePath.value = path;
     otaFileName.value = name;
     otaLog.clear();
-    otaLog.add('[${_ts()}] 已选择文件: $name');
+    otaLog.add('[${_ts()}] 已选择: $name');
   }
 
   Future<void> startOta() async {
@@ -318,14 +355,11 @@ class ChargerController extends GetxController {
     otaProgress.value = 0;
     otaLog.add('[${_ts()}] 开始传输升级包...');
 
-    // 模拟分包传输
     const totalChunks = 20;
     for (int i = 0; i < totalChunks; i++) {
       await Future.delayed(const Duration(milliseconds: 150));
       otaProgress.value = (i + 1) / totalChunks;
       otaLog.add('[${_ts()}] 发送分包 ${i + 1}/$totalChunks');
-
-      // 模拟发送命令 0xAA 0x05 [chunk_index] [data...] 0xBB
       await _sendCommand([0xAA, 0x05, i, ...List.filled(16, i), 0xBB]);
     }
 
@@ -358,7 +392,9 @@ class ChargerController extends GetxController {
     _scanSub?.cancel();
     _connStateSub?.cancel();
     _notifySub?.cancel();
-    FlutterBluePlus.stopScan();
+    if (!isMock.value) {
+      FlutterBluePlus.stopScan();
+    }
     super.onClose();
   }
 }

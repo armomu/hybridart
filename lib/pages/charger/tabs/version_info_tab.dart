@@ -52,7 +52,9 @@ class _VersionInfoTabState extends State<VersionInfoTab>
             _buildInfoCard([
               _InfoRow(
                 label: '设备 MAC',
-                value: ctrl.connectedDevice.value?.remoteId.str ?? '—',
+                value: ctrl.isConnected.value
+                    ? (ctrl.connectedDevice.value?.remoteId.str ?? 'Mock')
+                    : '未连接',
                 icon: Icons.router_outlined,
                 iconColor: Colors.purple,
               ),

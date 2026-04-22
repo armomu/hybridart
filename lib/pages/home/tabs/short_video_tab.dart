@@ -283,6 +283,7 @@ class _VideoFeedViewState extends State<_VideoFeedView>
   @override
   void initState() {
     super.initState();
+    print('_VideoFeedView initState============================');
     _pageController =
         PageController(initialPage: widget.controller.currentPage);
   }

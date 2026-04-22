@@ -89,7 +89,7 @@ class DeviceStatusTab extends StatelessWidget {
   }
 
   Widget _buildConnectionBanner(ChargerController ctrl) {
-    final connected = ctrl.connectedDevice.value != null;
+    final connected = ctrl.isConnected.value;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
