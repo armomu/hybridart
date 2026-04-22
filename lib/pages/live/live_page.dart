@@ -49,7 +49,7 @@ class _LivePageState extends State<LivePage>
 
   void _initVlcPlayer() {
     _vlcController = VlcPlayerController.network(
-      'rtmp://live.hkstv.hk.lxdns.com/live/hks',
+      'rtmp://ns8.indexforce.com/home/mystream',
       autoPlay: true,
       hwAcc: HwAcc.full,
       options: VlcPlayerOptions(
@@ -147,8 +147,7 @@ class _LivePageState extends State<LivePage>
         ),
 
         // 加载/缓冲中遮罩
-        if (_isBuffering && !_isPlaying)
-          _buildLoadingPlaceholder(),
+        if (_isBuffering && !_isPlaying) _buildLoadingPlaceholder(),
 
         // 未播放时显示播放按钮
         if (!_isPlaying && !_isBuffering && _errorMessage.isEmpty)
@@ -162,7 +161,8 @@ class _LivePageState extends State<LivePage>
                   color: Colors.black45,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.play_arrow, color: Colors.white, size: 48),
+                child:
+                    const Icon(Icons.play_arrow, color: Colors.white, size: 48),
               ),
             ),
           ),
@@ -180,7 +180,8 @@ class _LivePageState extends State<LivePage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.signal_wifi_off, color: Colors.red, size: 48),
+                  const Icon(Icons.signal_wifi_off,
+                      color: Colors.red, size: 48),
                   const SizedBox(height: 12),
                   const Text(
                     '直播连接失败',
@@ -246,7 +247,8 @@ class _LivePageState extends State<LivePage>
               // 返回按钮
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                icon: const Icon(Icons.arrow_back_ios,
+                    color: Colors.white, size: 20),
                 padding: const EdgeInsets.all(8),
               ),
               // 主播头像
@@ -291,7 +293,8 @@ class _LivePageState extends State<LivePage>
               const SizedBox(width: 8),
               // 关注按钮
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.red,
                   borderRadius: BorderRadius.circular(12),
@@ -370,7 +373,7 @@ class _LivePageState extends State<LivePage>
         Container(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.black38,
             shape: BoxShape.circle,
           ),
@@ -417,7 +420,8 @@ class _LivePageState extends State<LivePage>
               children: [
                 _buildChatView(),
                 _buildPlaceholderView(Icons.how_to_vote_outlined, '投票功能开发中...'),
-                _buildPlaceholderView(Icons.sports_score_outlined, '赛况功能开发中...'),
+                _buildPlaceholderView(
+                    Icons.sports_score_outlined, '赛况功能开发中...'),
               ],
             ),
           ),
@@ -487,7 +491,8 @@ class _LivePageState extends State<LivePage>
                     onSubmitted: (_) => _sendMessage(),
                     decoration: InputDecoration(
                       hintText: '说点什么...',
-                      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                      hintStyle:
+                          TextStyle(color: Colors.grey[400], fontSize: 13),
                       filled: true,
                       fillColor: Colors.grey[100],
                       isDense: true,
@@ -512,7 +517,8 @@ class _LivePageState extends State<LivePage>
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send, color: Colors.white, size: 18),
+                    child:
+                        const Icon(Icons.send, color: Colors.white, size: 18),
                   ),
                 ),
               ],

@@ -3,6 +3,47 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 可见性检测 Widget
+// ═══════════════════════════════════════════════════════════════════════════
+
+class WidgetVisibilityInfo {
+  final double visibleFraction;
+  const WidgetVisibilityInfo(this.visibleFraction);
+}
+
+typedef VisibilityChangedCallback = void Function(WidgetVisibilityInfo);
+
+class VisibilityDetector extends StatefulWidget {
+  final Widget child;
+  final VisibilityChangedCallback onVisibilityChanged;
+
+  const VisibilityDetector({
+    super.key,
+    required this.child,
+    required this.onVisibilityChanged,
+  });
+
+  @override
+  State<VisibilityDetector> createState() => _VisibilityDetectorState();
+}
+
+class _VisibilityDetectorState extends State<VisibilityDetector> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 首次渲染时通知可见
+      widget.onVisibilityChanged(const WidgetVisibilityInfo(1.0));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 数据模型
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -276,6 +317,7 @@ class _VideoFeedView extends StatefulWidget {
 class _VideoFeedViewState extends State<_VideoFeedView>
     with AutomaticKeepAliveClientMixin {
   late PageController _pageController;
+  bool _isViewVisible = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -283,30 +325,48 @@ class _VideoFeedViewState extends State<_VideoFeedView>
   @override
   void initState() {
     super.initState();
-    print('_VideoFeedView initState============================');
     _pageController =
         PageController(initialPage: widget.controller.currentPage);
   }
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// 检测当前 View 是否可见
+  void _onVisibilityChanged(WidgetVisibilityInfo info) {
+    final visible = info.visibleFraction > 0.1;
+    if (visible != _isViewVisible) {
+      setState(() {
+        _isViewVisible = visible;
+      });
+      debugPrint('_VideoFeedView visibility: $visible');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
-    // 判断这个 feed 是否处于可见 Tab
-    final isActive = (widget.controller.currentPage >= 0);
-    return PageView.builder(
-      controller: _pageController,
-      scrollDirection: Axis.vertical,
-      itemCount: _videoList.length,
-      onPageChanged: (index) {
-        widget.controller.onPageChanged(index);
-        setState(() {});
-      },
-      itemBuilder: (context, index) {
-        return _VideoPage(
-          data: _videoList[index],
-          isActive: index == widget.controller.currentPage,
-        );
-      },
+    return VisibilityDetector(
+      onVisibilityChanged: _onVisibilityChanged,
+      child: PageView.builder(
+        controller: _pageController,
+        scrollDirection: Axis.vertical,
+        itemCount: _videoList.length,
+        onPageChanged: (index) {
+          widget.controller.onPageChanged(index);
+          setState(() {});
+        },
+        itemBuilder: (context, index) {
+          return _VideoPage(
+            data: _videoList[index],
+            isActive: index == widget.controller.currentPage,
+            lazyLoad: !_isViewVisible,
+          );
+        },
+      ),
     );
   }
 }
@@ -418,14 +478,21 @@ class _VideoPage extends StatefulWidget {
   final _VideoData data;
   final bool isActive;
 
-  const _VideoPage({required this.data, required this.isActive});
+  /// 是否启用懒加载（只有可见时才初始化视频）
+  final bool lazyLoad;
+
+  const _VideoPage({
+    required this.data,
+    required this.isActive,
+    this.lazyLoad = false,
+  });
 
   @override
   State<_VideoPage> createState() => _VideoPageState();
 }
 
 class _VideoPageState extends State<_VideoPage> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _initialized = false;
   bool _isPlaying = true;
   bool _showPlayIcon = false;
@@ -433,17 +500,40 @@ class _VideoPageState extends State<_VideoPage> {
   @override
   void initState() {
     super.initState();
-    _initVideo();
+    // 如果不是懒加载模式，直接初始化；否则等待变得可见
+    if (!widget.lazyLoad) {
+      _initVideo();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_VideoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 懒加载模式下，当变得可见时初始化视频
+    if (widget.lazyLoad &&
+        widget.isActive &&
+        !oldWidget.isActive &&
+        !_initialized) {
+      _initVideo();
+    }
+    if (!_initialized) return;
+    if (widget.isActive && !oldWidget.isActive) {
+      _controller?.play();
+      setState(() => _isPlaying = true);
+    } else if (!widget.isActive && oldWidget.isActive) {
+      _controller?.pause();
+    }
   }
 
   Future<void> _initVideo() async {
+    if (_controller != null) return; // 避免重复初始化
     _controller = VideoPlayerController.networkUrl(
       Uri.parse(widget.data.url),
     );
-    await _controller.initialize();
-    _controller.setLooping(true);
+    await _controller!.initialize();
+    _controller!.setLooping(true);
     if (widget.isActive) {
-      _controller.play();
+      _controller!.play();
     }
     if (mounted) {
       setState(() => _initialized = true);
@@ -451,32 +541,20 @@ class _VideoPageState extends State<_VideoPage> {
   }
 
   @override
-  void didUpdateWidget(_VideoPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!_initialized) return;
-    if (widget.isActive && !oldWidget.isActive) {
-      _controller.play();
-      setState(() => _isPlaying = true);
-    } else if (!widget.isActive && oldWidget.isActive) {
-      _controller.pause();
-    }
-  }
-
-  @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   void _togglePlay() {
-    if (!_initialized) return;
+    if (!_initialized || _controller == null) return;
     setState(() {
       _isPlaying = !_isPlaying;
       _showPlayIcon = true;
       if (_isPlaying) {
-        _controller.play();
+        _controller!.play();
       } else {
-        _controller.pause();
+        _controller!.pause();
       }
     });
     Future.delayed(const Duration(milliseconds: 800), () {
@@ -492,11 +570,11 @@ class _VideoPageState extends State<_VideoPage> {
         fit: StackFit.expand,
         children: [
           Container(color: Colors.black),
-          if (_initialized)
+          if (_initialized && _controller != null)
             Center(
               child: AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
+                aspectRatio: _controller!.value.aspectRatio,
+                child: VideoPlayer(_controller!),
               ),
             )
           else

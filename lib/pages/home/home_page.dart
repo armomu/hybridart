@@ -4,6 +4,8 @@ import 'tabs/short_video_tab.dart';
 import 'tabs/message_tab.dart';
 import 'tabs/profile_tab.dart';
 
+/// 首页 Tab 懒加载控制器
+/// 实现：点击 Tab 时加载内容，第二次点击不重复加载
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -15,12 +17,12 @@ class _HomePageState extends State<HomePage> {
   /// 当前激活的 navIndex（0=首页, 1=短视频, 2=+号, 3=消息, 4=我的）
   int _currentIndex = 0;
 
-  static const List<Widget> _pages = [
-    HomeTab(),
-    ShortVideoTab(),
-    MessageTab(),
-    ProfileTab(),
-  ];
+  /// 各 Tab 的加载状态：true = 已加载过（缓存），false = 未加载
+  /// 懒加载策略：只有点击到该 Tab 时才标记为已加载
+  final Map<int, bool> _tabLoaded = {0: true}; // 默认首页初始显示，直接加载
+
+  /// 各 Tab 页面实例（懒创建，只创建一次）
+  final Map<int, Widget> _tabPages = {};
 
   /// navIndex → 页面索引（+号占位不对应页面，跳过）
   int _navIndexToPageIndex(int navIndex) {
@@ -28,11 +30,40 @@ class _HomePageState extends State<HomePage> {
     return navIndex - 1;
   }
 
+  /// 获取或创建 Tab 页面（懒加载）
+  Widget _getOrCreateTabPage(int navIndex) {
+    final pageIndex = _navIndexToPageIndex(navIndex);
+    if (!_tabPages.containsKey(pageIndex)) {
+      switch (pageIndex) {
+        case 0:
+          _tabPages[pageIndex] = const HomeTab();
+          break;
+        case 1:
+          _tabPages[pageIndex] = const ShortVideoTab();
+          break;
+        case 2:
+          _tabPages[pageIndex] = const MessageTab();
+          break;
+        case 3:
+          _tabPages[pageIndex] = const ProfileTab();
+          break;
+      }
+    }
+    return _tabPages[pageIndex]!;
+  }
+
   void _onTabTapped(int navIndex) {
     if (navIndex == 2) {
       _onPlusPressed();
       return;
     }
+
+    // 懒加载：如果是第一次点击该 Tab，触发加载
+    if (!_tabLoaded.containsKey(navIndex)) {
+      _tabLoaded[navIndex] = true;
+      debugPrint('Tab $navIndex 首次加载');
+    }
+
     setState(() {
       _currentIndex = navIndex;
     });
@@ -50,9 +81,16 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _navIndexToPageIndex(_currentIndex),
-        children: _pages,
+      body: Stack(
+        children: [
+          // 所有 Tab 页面都放在 Stack 中，通过 Offstage 控制显示
+          for (int i = 0; i < 5; i++)
+            if (i != 2) // 跳过 + 号
+              Offstage(
+                offstage: _currentIndex != i,
+                child: _getOrCreateTabPage(i),
+              ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavBar(context),
     );
@@ -120,6 +158,7 @@ class _HomePageState extends State<HomePage> {
     required int navIndex,
   }) {
     final bool isActive = _currentIndex == navIndex;
+    final isLoaded = _tabLoaded[navIndex] ?? false;
     final color =
         isActive ? Theme.of(context).colorScheme.primary : Colors.grey[600]!;
 
@@ -130,7 +169,26 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(isActive ? activeIcon : icon, color: color, size: 24),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(isActive ? activeIcon : icon, color: color, size: 24),
+                // 小红点提示未读（可选）
+                if (!isLoaded)
+                  Positioned(
+                    right: -4,
+                    top: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 2),
             Text(
               label,
