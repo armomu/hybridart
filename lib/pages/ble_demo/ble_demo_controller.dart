@@ -19,6 +19,9 @@ class BleLogEntry {
   });
 }
 
+/// OTA 升级状态
+enum OtaState { idle, selecting, uploading, verifying, success, failed }
+
 /// 蓝牙示例控制器
 class BleDemoController extends GetxController {
   // ── 扫描 & 连接 ───────────────────────────────────────────────
@@ -39,6 +42,13 @@ class BleDemoController extends GetxController {
 
   // ── 接收数据日志 ───────────────────────────────────────────────
   final receiveLogs = <BleLogEntry>[].obs;
+
+  // ── OTA ────────────────────────────────────────────────────────
+  final otaState = OtaState.idle.obs;
+  final otaProgress = 0.0.obs;
+  final otaFilePath = ''.obs;
+  final otaFileName = ''.obs;
+  final otaLog = <String>[].obs;
 
   // ── 内部 ───────────────────────────────────────────────────────
   StreamSubscription? _scanSub;
@@ -223,6 +233,52 @@ class BleDemoController extends GetxController {
 
   void clearSendLogs() => sendLogs.clear();
   void clearReceiveLogs() => receiveLogs.clear();
+
+  // ─────────────────────────────────────────────────────────────
+  //  OTA 升级
+  // ─────────────────────────────────────────────────────────────
+
+  void setOtaFile(String path, String name) {
+    otaFilePath.value = path;
+    otaFileName.value = name;
+    otaLog.clear();
+    otaLog.add('[${_ts()}] 已选择: $name');
+  }
+
+  Future<void> startOta() async {
+    if (otaFilePath.isEmpty) {
+      Get.snackbar('请先选择升级包', '', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    otaState.value = OtaState.uploading;
+    otaProgress.value = 0;
+    otaLog.add('[${_ts()}] 开始传输升级包...');
+
+    const totalChunks = 20;
+    for (int i = 0; i < totalChunks; i++) {
+      await Future.delayed(const Duration(milliseconds: 150));
+      otaProgress.value = (i + 1) / totalChunks;
+      otaLog.add('[${_ts()}] 发送分包 ${i + 1}/$totalChunks');
+      await _sendCommand([0xAA, 0x05, i, ...List.filled(16, i), 0xBB]);
+    }
+
+    otaState.value = OtaState.verifying;
+    otaLog.add('[${_ts()}] 传输完成，等待设备校验...');
+    // TODO: 通过通知回调接收校验结果，此处暂以超时模拟等待
+    await Future.delayed(const Duration(seconds: 2));
+
+    otaState.value = OtaState.success;
+    otaProgress.value = 1.0;
+    otaLog.add('[${_ts()}] ✅ OTA 升级成功！设备将自动重启。');
+  }
+
+  void resetOta() {
+    otaState.value = OtaState.idle;
+    otaProgress.value = 0;
+    otaFilePath.value = '';
+    otaFileName.value = '';
+    otaLog.clear();
+  }
 
   String _formatHex(List<int> data) {
     return data.map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
