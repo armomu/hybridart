@@ -4,7 +4,7 @@ import '../pages/settings/settings_page.dart';
 import '../pages/lifecycle/lifecycle_detail_page.dart';
 import '../pages/lifecycle/lifecycle_demo_page.dart';
 import '../pages/live/live_page.dart';
-import '../pages/charger/charger_page.dart';
+import '../pages/ble_demo/ble_demo_page.dart';
 
 /// 路由名称常量
 abstract class Routes {
@@ -13,7 +13,7 @@ abstract class Routes {
   static const String lifecycleDetail = '/lifecycle-detail';
   static const String lifecycleDemo = '/lifecycle-demo';
   static const String live = '/live';
-  static const String charger = '/charger';
+  static const String bleDemo = '/ble-demo';
 }
 
 /// 路由配置
@@ -51,8 +51,8 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
-      name: Routes.charger,
-      page: () => const ChargerPage(),
+      name: Routes.bleDemo,
+      page: () => const BleDemoPage(),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 250),
     ),

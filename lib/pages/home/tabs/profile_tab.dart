@@ -92,11 +92,11 @@ class ProfileTab extends StatelessWidget {
         label: '生命周期',
         onTap: () => Get.toNamed(Routes.lifecycleDemo),
       ),
-      // 第三项：充电桩管理
+      // 第三项：蓝牙示例
       _FeatureItem(
-        icon: Icons.ev_station,
-        label: '充电桩',
-        onTap: () => Get.toNamed(Routes.charger),
+        icon: Icons.bluetooth,
+        label: '蓝牙示例',
+        onTap: () => Get.toNamed(Routes.bleDemo),
       ),
       _FeatureItem(
         icon: Icons.favorite_border,
