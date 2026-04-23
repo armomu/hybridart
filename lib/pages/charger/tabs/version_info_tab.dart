@@ -53,7 +53,7 @@ class _VersionInfoTabState extends State<VersionInfoTab>
               _InfoRow(
                 label: '设备 MAC',
                 value: ctrl.isConnected.value
-                    ? (ctrl.connectedDevice.value?.remoteId.str ?? 'Mock')
+                    ? (ctrl.connectedDevice.value?.remoteId.str ?? '—')
                     : '未连接',
                 icon: Icons.router_outlined,
                 iconColor: Colors.purple,
