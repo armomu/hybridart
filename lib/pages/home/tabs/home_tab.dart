@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 首页 Tab - 静态UI
+/// 首页 Tab - 静态UI（支持亮色/暗色主题）
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
 
@@ -18,10 +18,38 @@ class _HomeTabState extends State<HomeTab> {
     super.dispose();
   }
 
+  // ================================================================
+  // 主题色抽取引擎
+  // ================================================================
+  _HomeColors get _c {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return _HomeColors(
+      isDark: isDark,
+      scaffoldBg: theme.scaffoldBackgroundColor,
+      card: colorScheme.surface,
+      cardShadow: isDark
+          ? Colors.black.withOpacity(0.3)
+          : Colors.black.withOpacity(0.05),
+      textPrimary: colorScheme.onSurface,
+      textSecondary: colorScheme.onSurface.withOpacity(0.6),
+      textHint: colorScheme.onSurface.withOpacity(0.4),
+      divider: colorScheme.outlineVariant,
+      searchBg: colorScheme.surface,
+      primary: const Color(0xFF667eea), // 品牌主色（渐变起点）
+      primaryLight: const Color(0xFF764ba2), // 渐变终点
+      accent1: const Color(0xFFFF6B6B), // 红
+      accent2: const Color(0xFF52C41A), // 绿
+      accent3: const Color(0xFFFAAD14), // 黄
+      white: Colors.white,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: _c.scaffoldBg,
       body: Column(
         children: [
           // ========== 头部区域（渐变背景） ==========
@@ -68,16 +96,16 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  /// 头部栏 - 渐变背景
+  /// 头部栏 - 渐变背景（渐变色不变，保持品牌感）
   Widget _buildHeader(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF667eea), // 紫色
-            Color(0xFF764ba2), // 深紫色
+            _c.primary,
+            _c.primaryLight,
           ],
         ),
       ),
@@ -92,12 +120,12 @@ class _HomeTabState extends State<HomeTab> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: _c.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person,
-                  color: Colors.white,
+                  color: _c.white,
                   size: 24,
                 ),
               ),
@@ -109,7 +137,7 @@ class _HomeTabState extends State<HomeTab> {
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: _c.searchBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: TextField(
@@ -121,9 +149,14 @@ class _HomeTabState extends State<HomeTab> {
                     },
                     decoration: InputDecoration(
                       hintText: '搜索内容...',
-                      hintStyle:
-                          TextStyle(color: Colors.grey[500], fontSize: 14),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+                      hintStyle: TextStyle(
+                        color: _c.textHint,
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: _c.textHint,
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     ),
@@ -138,15 +171,15 @@ class _HomeTabState extends State<HomeTab> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: _c.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Stack(
                   children: [
-                    const Center(
+                    Center(
                       child: Icon(
                         Icons.notifications,
-                        color: Colors.white,
+                        color: _c.white,
                         size: 24,
                       ),
                     ),
@@ -193,11 +226,11 @@ class _HomeTabState extends State<HomeTab> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: _c.card,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: _c.cardShadow,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -206,15 +239,15 @@ class _HomeTabState extends State<HomeTab> {
                 child: Icon(
                   item['icon'] as IconData,
                   size: 28,
-                  color: const Color(0xFF667eea),
+                  color: _c.primary,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 item['label'] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Colors.black87,
+                  color: _c.textPrimary,
                 ),
               ),
             ],
@@ -224,36 +257,33 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  /// 可左右滑动的功能卡片（PageView，每页 2行×5列=10个图标，无标题无label）
+  /// 可左右滑动的功能卡片（PageView，每页 2行×5列=10个图标）
   Widget _buildFunctionCard() {
-    // 10 个图标分 2 页，每页 10 个（2行×5列）
-    // 如需更多页，往这里追加即可
+    // 每页 10 个图标（2行×5列），目前 2 页
     final pages = [
-      // 第 1 页
       [
-        Icons.local_play,
-        Icons.shopping_cart,
-        Icons.history,
-        Icons.favorite,
-        Icons.card_giftcard,
-        Icons.credit_card,
-        Icons.location_on,
-        Icons.security,
-        Icons.help,
-        Icons.settings,
+        {'icon': Icons.local_play, 'label': '优惠券'},
+        {'icon': Icons.shopping_cart, 'label': '购物车'},
+        {'icon': Icons.history, 'label': '历史'},
+        {'icon': Icons.favorite, 'label': '收藏'},
+        {'icon': Icons.card_giftcard, 'label': '礼品卡'},
+        {'icon': Icons.credit_card, 'label': '银行卡'},
+        {'icon': Icons.location_on, 'label': '地址'},
+        {'icon': Icons.security, 'label': '安全'},
+        {'icon': Icons.help, 'label': '帮助'},
+        {'icon': Icons.settings, 'label': '设置'},
       ],
-      // 第 2 页（示例第二页）
       [
-        Icons.directions_car,
-        Icons.flight,
-        Icons.hotel,
-        Icons.restaurant,
-        Icons.local_hospital,
-        Icons.school,
-        Icons.sports_esports,
-        Icons.movie,
-        Icons.music_note,
-        Icons.photo_camera,
+        {'icon': Icons.directions_car, 'label': '出行'},
+        {'icon': Icons.flight, 'label': '旅行'},
+        {'icon': Icons.hotel, 'label': '酒店'},
+        {'icon': Icons.restaurant, 'label': '美食'},
+        {'icon': Icons.local_hospital, 'label': '医疗'},
+        {'icon': Icons.school, 'label': '教育'},
+        {'icon': Icons.sports_esports, 'label': '游戏'},
+        {'icon': Icons.movie, 'label': '影视'},
+        {'icon': Icons.music_note, 'label': '音乐'},
+        {'icon': Icons.photo_camera, 'label': '摄影'},
       ],
     ];
 
@@ -261,11 +291,11 @@ class _HomeTabState extends State<HomeTab> {
       height: 160,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _c.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: _c.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -292,8 +322,10 @@ class _HomeTabState extends State<HomeTab> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: icons
                             .take(5)
-                            .map((e) =>
-                                _buildFunctionItem(icon: e, label: 'label'))
+                            .map((e) => _buildFunctionItem(
+                                  icon: e['icon'] as IconData,
+                                  label: e['label'] as String,
+                                ))
                             .toList(),
                       ),
                       const SizedBox(height: 12),
@@ -302,8 +334,10 @@ class _HomeTabState extends State<HomeTab> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: icons
                             .skip(5)
-                            .map((e) =>
-                                _buildFunctionItem(icon: e, label: 'label'))
+                            .map((e) => _buildFunctionItem(
+                                  icon: e['icon'] as IconData,
+                                  label: e['label'] as String,
+                                ))
                             .toList(),
                       ),
                     ],
@@ -326,7 +360,7 @@ class _HomeTabState extends State<HomeTab> {
                   width: active ? 16 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: active ? const Color(0xFF667eea) : Colors.grey[300],
+                    color: active ? _c.primary : _c.textHint,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 );
@@ -344,11 +378,11 @@ class _HomeTabState extends State<HomeTab> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 28, color: const Color(0xFF667eea)),
+          Icon(icon, size: 28, color: _c.primary),
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: Colors.black87),
+            style: TextStyle(fontSize: 11, color: _c.textPrimary),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -364,42 +398,39 @@ class _HomeTabState extends State<HomeTab> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFFFF6B6B).withOpacity(0.1),
-            const Color(0xFF667eea).withOpacity(0.1),
-          ],
-        ),
+        color: _c.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF667eea).withOpacity(0.2)),
+        border: Border.all(
+          color: _c.primary.withOpacity(0.15),
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF667eea),
+              color: _c.primary,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: const Text(
+            child: Text(
               '公告',
               style: TextStyle(
-                color: Colors.white,
+                color: _c.white,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               '欢迎使用 HybridArt 应用，更多精彩功能等您探索！',
-              style: TextStyle(fontSize: 13, color: Colors.black87),
+              style: TextStyle(fontSize: 13, color: _c.textPrimary),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          Icon(Icons.chevron_right, color: _c.textHint, size: 20),
         ],
       ),
     );
@@ -415,45 +446,42 @@ class _HomeTabState extends State<HomeTab> {
       ),
       child: Row(
         children: [
-          // 左边 40% 宽度竖形块
+          // 左边 40% 竖形块（渐变背景，保持品牌感）
           Expanded(
             flex: 4,
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF667eea),
-                    Color(0xFF764ba2),
-                  ],
+                  colors: [_c.primary, _c.primaryLight],
                 ),
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   bottomLeft: Radius.circular(16),
                 ),
               ),
               child: Stack(
                 children: [
-                  const Positioned(
+                  Positioned(
                     left: 16,
                     top: 16,
                     child: Text(
                       '精选推荐',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: _c.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const Positioned(
+                  Positioned(
                     left: 16,
                     bottom: 16,
                     child: Text(
                       '发现更多精彩',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: _c.white.withOpacity(0.7),
                         fontSize: 12,
                       ),
                     ),
@@ -463,7 +491,7 @@ class _HomeTabState extends State<HomeTab> {
                     bottom: 16,
                     child: Icon(
                       Icons.arrow_forward,
-                      color: Colors.white.withOpacity(0.5),
+                      color: _c.white.withOpacity(0.5),
                       size: 32,
                     ),
                   ),
@@ -481,13 +509,13 @@ class _HomeTabState extends State<HomeTab> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: _c.card,
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(16),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: _c.cardShadow,
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -502,12 +530,12 @@ class _HomeTabState extends State<HomeTab> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text(
+                                Text(
                                   '限时优惠',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: _c.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -515,7 +543,7 @@ class _HomeTabState extends State<HomeTab> {
                                   '立即查看',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey[600],
+                                    color: _c.textSecondary,
                                   ),
                                 ),
                               ],
@@ -527,12 +555,12 @@ class _HomeTabState extends State<HomeTab> {
                           height: 50,
                           margin: const EdgeInsets.only(right: 12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF6B6B).withOpacity(0.1),
+                            color: _c.accent1.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.local_offer,
-                            color: Color(0xFFFF6B6B),
+                            color: _c.accent1,
                             size: 28,
                           ),
                         ),
@@ -550,13 +578,13 @@ class _HomeTabState extends State<HomeTab> {
                         child: Container(
                           margin: const EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: _c.card,
                             borderRadius: const BorderRadius.only(
                               bottomRight: Radius.circular(16),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: _c.cardShadow,
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -572,12 +600,12 @@ class _HomeTabState extends State<HomeTab> {
                                         CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text(
+                                      Text(
                                         '新用户',
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
+                                          color: _c.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -585,7 +613,7 @@ class _HomeTabState extends State<HomeTab> {
                                         '专属福利',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: Colors.grey[600],
+                                          color: _c.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -597,13 +625,12 @@ class _HomeTabState extends State<HomeTab> {
                                 height: 36,
                                 margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF52C41A).withOpacity(0.1),
+                                  color: _c.accent2.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.card_giftcard,
-                                  color: Color(0xFF52C41A),
+                                  color: _c.accent2,
                                   size: 20,
                                 ),
                               ),
@@ -619,13 +646,13 @@ class _HomeTabState extends State<HomeTab> {
                         child: Container(
                           margin: const EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: _c.card,
                             borderRadius: const BorderRadius.only(
                               bottomRight: Radius.circular(16),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: _c.cardShadow,
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -641,12 +668,12 @@ class _HomeTabState extends State<HomeTab> {
                                         CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text(
+                                      Text(
                                         '签到',
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
+                                          color: _c.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -654,7 +681,7 @@ class _HomeTabState extends State<HomeTab> {
                                         '每日奖励',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: Colors.grey[600],
+                                          color: _c.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -666,13 +693,12 @@ class _HomeTabState extends State<HomeTab> {
                                 height: 36,
                                 margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFFFAAD14).withOpacity(0.1),
+                                  color: _c.accent3.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.calendar_today,
-                                  color: Color(0xFFFAAD14),
+                                  color: _c.accent3,
                                   size: 20,
                                 ),
                               ),
@@ -698,36 +724,36 @@ class _HomeTabState extends State<HomeTab> {
         'icon': Icons.trending_up,
         'title': '热门资讯',
         'subtitle': '查看最新动态',
-        'color': const Color(0xFFFF6B6B),
+        'color': _c.accent1,
       },
       {
         'icon': Icons.new_releases,
         'title': '新功能上线',
         'subtitle': '了解最新功能',
-        'color': const Color(0xFF667eea),
+        'color': _c.primary,
       },
       {
         'icon': Icons.star,
         'title': '用户好评',
         'subtitle': '看看大家怎么说',
-        'color': const Color(0xFFFAAD14),
+        'color': _c.accent3,
       },
       {
         'icon': Icons.support_agent,
         'title': '联系客服',
         'subtitle': '遇到问题？联系我们',
-        'color': const Color(0xFF52C41A),
+        'color': _c.accent2,
       },
     ];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _c.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: _c.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -741,19 +767,19 @@ class _HomeTabState extends State<HomeTab> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   '便捷服务',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: _c.textPrimary,
                   ),
                 ),
                 Text(
                   '查看全部 >',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: _c.textSecondary,
                   ),
                 ),
               ],
@@ -761,7 +787,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
 
           // 分割线
-          Container(height: 1, color: Colors.grey[200]),
+          Container(height: 1, color: _c.divider),
 
           // 列表项
           ...items.asMap().entries.map((entry) {
@@ -785,21 +811,22 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                   title: Text(
                     item['title'] as String,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
+                      color: _c.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     item['subtitle'] as String,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: _c.textSecondary,
                     ),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right,
-                    color: Colors.grey,
+                    color: _c.textSecondary,
                   ),
                   onTap: () {},
                 ),
@@ -807,7 +834,7 @@ class _HomeTabState extends State<HomeTab> {
                   Container(
                     height: 1,
                     margin: const EdgeInsets.only(left: 70),
-                    color: Colors.grey[100],
+                    color: _c.divider.withOpacity(0.5),
                   ),
               ],
             );
@@ -818,4 +845,41 @@ class _HomeTabState extends State<HomeTab> {
       ),
     );
   }
+}
+
+/// 首页专属主题色抽取引擎
+class _HomeColors {
+  final bool isDark;
+  final Color scaffoldBg;
+  final Color card;
+  final Color cardShadow;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textHint;
+  final Color divider;
+  final Color searchBg;
+  final Color primary;
+  final Color primaryLight;
+  final Color accent1;
+  final Color accent2;
+  final Color accent3;
+  final Color white;
+
+  _HomeColors({
+    required this.isDark,
+    required this.scaffoldBg,
+    required this.card,
+    required this.cardShadow,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textHint,
+    required this.divider,
+    required this.searchBg,
+    required this.primary,
+    required this.primaryLight,
+    required this.accent1,
+    required this.accent2,
+    required this.accent3,
+    required this.white,
+  });
 }
