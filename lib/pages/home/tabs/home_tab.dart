@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// 首页 Tab - 静态UI（支持亮色/暗色主题）
 class HomeTab extends StatefulWidget {
@@ -63,13 +64,7 @@ class _HomeTabState extends State<HomeTab> {
                 // 模拟网络请求延迟
                 await Future.delayed(const Duration(seconds: 1));
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('刷新成功'),
-                      backgroundColor: _c.accent2,
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
+                  Get.snackbar('', '刷新成功');
                 }
               },
               child: SingleChildScrollView(
@@ -77,38 +72,38 @@ class _HomeTabState extends State<HomeTab> {
                   parent: BouncingScrollPhysics(),
                 ),
                 child: Column(
-                children: [
-                  const SizedBox(height: 16),
+                  children: [
+                    const SizedBox(height: 16),
 
-                  // -------- 四个带Label的图标按钮 --------
-                  _buildIconButtonsRow(),
+                    // -------- 四个带Label的图标按钮 --------
+                    _buildIconButtonsRow(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // -------- 可左右滑动的功能卡片 --------
-                  _buildFunctionCard(),
+                    // -------- 可左右滑动的功能卡片 --------
+                    _buildFunctionCard(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // -------- 消息通知横条 --------
-                  _buildNotificationBanner(),
+                    // -------- 消息通知横条 --------
+                    _buildNotificationBanner(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // -------- 16:9 区块组合 --------
-                  _buildFeaturedBlocks(),
+                    // -------- 16:9 区块组合 --------
+                    _buildFeaturedBlocks(),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // -------- 信息列表 --------
-                  _buildInfoList(),
+                    // -------- 信息列表 --------
+                    _buildInfoList(),
 
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         ],
       ),
     );

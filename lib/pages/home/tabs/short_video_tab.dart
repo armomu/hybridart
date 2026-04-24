@@ -573,10 +573,6 @@ class _VideoPageState extends State<_VideoPage> {
         fullscreenDialog: true,
         builder: (context) => _FullScreenVideoPage(
           controller: _controller!,
-          isPlaying: _isPlaying,
-          onTogglePlay: _togglePlay,
-          onExit: _exitFullScreen,
-          buildProgressBar: _buildProgressBar,
         ),
       ),
     );
@@ -587,8 +583,7 @@ class _VideoPageState extends State<_VideoPage> {
   /// 退出横屏，恢复竖屏
   Future<void> _exitFullScreen() async {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    await SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.portraitUp]);
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     if (mounted) {
       setState(() => _isFullScreen = false);
     }
@@ -937,17 +932,9 @@ class _VideoPageState extends State<_VideoPage> {
 
 class _FullScreenVideoPage extends StatefulWidget {
   final VideoPlayerController controller;
-  final bool isPlaying;
-  final VoidCallback onTogglePlay;
-  final Future<void> Function() onExit;
-  final Widget Function() buildProgressBar;
 
   const _FullScreenVideoPage({
     required this.controller,
-    required this.isPlaying,
-    required this.onTogglePlay,
-    required this.onExit,
-    required this.buildProgressBar,
   });
 
   @override
@@ -959,6 +946,8 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
@@ -974,9 +963,9 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
                 fit: BoxFit.contain,
                 child: SizedBox(
                   width: MediaQuery.of(context).size.height *
-                      widget.controller.value.aspectRatio,
+                      controller.value.aspectRatio,
                   height: MediaQuery.of(context).size.height,
-                  child: VideoPlayer(widget.controller),
+                  child: VideoPlayer(controller),
                 ),
               ),
             ),
@@ -994,26 +983,35 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
                 ),
               ),
 
-              // 中央：播放/暂停按钮
+              // 中央：播放/暂停按钮（用 ValueListenableBuilder 实时更新）
               Center(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {}); // 触发重建以更新图标
-                    widget.onTogglePlay();
+                child: ValueListenableBuilder(
+                  valueListenable: controller,
+                  builder: (context, VideoPlayerValue value, child) {
+                    return GestureDetector(
+                      onTap: () {
+                        if (value.isPlaying) {
+                          controller.pause();
+                        } else {
+                          controller.play();
+                        }
+                        setState(() {}); // 触发重建以更新图标
+                      },
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          color: Colors.black45,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          value.isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      ),
+                    );
                   },
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: const BoxDecoration(
-                      color: Colors.black45,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      widget.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 36,
-                    ),
-                  ),
                 ),
               ),
 
@@ -1082,9 +1080,11 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(fmt(position),
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12)),
                   Text(fmt(duration),
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12)),
                 ],
               ),
             ),
