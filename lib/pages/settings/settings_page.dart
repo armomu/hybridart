@@ -25,7 +25,19 @@ class SettingsPage extends StatelessWidget {
           _buildSectionHeader('外观设置'),
           Obx(() => Column(
             children: [
-              RadioListTile<ThemeMode>(
+              RadioListTile<AppThemeMode>(
+                title: const Row(
+                  children: [
+                    Icon(Icons.brightness_auto),
+                    SizedBox(width: 12),
+                    Text('跟随系统'),
+                  ],
+                ),
+                value: AppThemeMode.system,
+                groupValue: themeController.appThemeMode,
+                onChanged: (_) => themeController.setSystemMode(),
+              ),
+              RadioListTile<AppThemeMode>(
                 title: const Row(
                   children: [
                     Icon(Icons.light_mode),
@@ -33,11 +45,11 @@ class SettingsPage extends StatelessWidget {
                     Text('浅色模式'),
                   ],
                 ),
-                value: ThemeMode.light,
-                groupValue: themeController.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+                value: AppThemeMode.light,
+                groupValue: themeController.appThemeMode,
                 onChanged: (_) => themeController.setLightMode(),
               ),
-              RadioListTile<ThemeMode>(
+              RadioListTile<AppThemeMode>(
                 title: const Row(
                   children: [
                     Icon(Icons.dark_mode),
@@ -45,8 +57,8 @@ class SettingsPage extends StatelessWidget {
                     Text('深色模式'),
                   ],
                 ),
-                value: ThemeMode.dark,
-                groupValue: themeController.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+                value: AppThemeMode.dark,
+                groupValue: themeController.appThemeMode,
                 onChanged: (_) => themeController.setDarkMode(),
               ),
             ],
