@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hybridart/pages/ble_demo/ble_demo_controller.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/short_video_tab.dart';
 import 'tabs/message_tab.dart';
 import 'tabs/profile_tab.dart';
+import 'package:get/get.dart';
 
 /// 首页 Tab 懒加载控制器
 /// 实现：点击 Tab 时加载内容，第二次点击不重复加载
@@ -23,6 +25,8 @@ class _HomePageState extends State<HomePage> {
 
   /// 各 Tab 页面实例（懒创建，只创建一次）
   final Map<int, Widget> _tabPages = {};
+
+  final ctrl = Get.put(BleDemoController());
 
   /// navIndex → 页面索引（+号占位不对应页面，跳过）
   int _navIndexToPageIndex(int navIndex) {

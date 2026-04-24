@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
+import 'package:hybridart/routes/app_routes.dart';
 
 /// BLE 示例日志条目
 class BleLogEntry {
@@ -165,6 +166,9 @@ class BleDemoController extends GetxController {
   /// 处理设备主动上报的通知数据
   void _handleNotification(List<int> data) {
     _addReceiveLog('收到通知: ${_formatHex(data)}', data: data);
+    if (Get.currentRoute != Routes.bleDemo) {
+      Get.snackbar('蓝牙通知', _formatHex(data));
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -181,8 +185,7 @@ class BleDemoController extends GetxController {
       debugPrint("正在尝试写入特征值: ${_writeChar?.uuid.str}");
       debugPrint("待发送数据: $cmd");
       await char.write(cmd, withoutResponse: false);
-      debugPrint(
-          '[BleDemo] -> 发送 ${cmd.length} bytes: ${_formatHex(cmd)}');
+      debugPrint('[BleDemo] -> 发送 ${cmd.length} bytes: ${_formatHex(cmd)}');
       return true;
     } catch (e) {
       debugPrint('[BleDemo] _sendCommand error: $e');
@@ -281,7 +284,9 @@ class BleDemoController extends GetxController {
   }
 
   String _formatHex(List<int> data) {
-    return data.map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
+    return data
+        .map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase())
+        .join(' ');
   }
 
   String _ts() {

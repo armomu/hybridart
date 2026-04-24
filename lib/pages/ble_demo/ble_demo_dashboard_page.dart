@@ -19,7 +19,8 @@ class BleDemoDashboardPage extends StatelessWidget {
         appBar: AppBar(
           title: Obx(() => Text(
                 ctrl.isConnected.value
-                    ? (ctrl.connectedDevice.value?.platformName.isNotEmpty == true
+                    ? (ctrl.connectedDevice.value?.platformName.isNotEmpty ==
+                            true
                         ? ctrl.connectedDevice.value!.platformName
                         : '蓝牙设备')
                     : '蓝牙示例',
@@ -27,8 +28,8 @@ class BleDemoDashboardPage extends StatelessWidget {
           centerTitle: true,
           bottom: const TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.send_outlined, size: 20), text: '发送数据'),
-              Tab(icon: Icon(Icons.system_update_alt, size: 20), text: 'OTA升级'),
+              Tab(text: '发送数据'),
+              Tab(text: 'OTA升级'),
             ],
           ),
         ),
