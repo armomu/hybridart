@@ -1031,18 +1031,11 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
     );
   }
 
-  /// 全屏模式下的进度条（带时间显示）
+  /// 全屏模式下的进度条（带时间显示，实时同步）
   Widget _buildFullScreenProgressBar() {
     if (!widget.controller.value.isInitialized) {
       return const SizedBox.shrink();
     }
-
-    final controller = widget.controller;
-    final position = controller.value.position;
-    final duration = controller.value.duration;
-    final progress = duration.inMilliseconds > 0
-        ? position.inMilliseconds / duration.inMilliseconds
-        : 0.0;
 
     String fmt(Duration d) {
       final m = d.inMinutes;
@@ -1050,43 +1043,54 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
       return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 进度条（全宽）
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: Colors.white,
-            inactiveTrackColor: Colors.white30,
-            thumbColor: Colors.white,
-            overlayColor: Colors.white24,
-            thumbShape: const RoundSliderThumbShape(
-              enabledThumbRadius: 6,
+    return ValueListenableBuilder(
+      valueListenable: widget.controller,
+      builder: (context, VideoPlayerValue value, child) {
+        final position = value.position;
+        final duration = value.duration;
+        final progress = duration.inMilliseconds > 0
+            ? position.inMilliseconds / duration.inMilliseconds
+            : 0.0;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 进度条（全宽）
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: Colors.white,
+                inactiveTrackColor: Colors.white30,
+                thumbColor: Colors.white,
+                overlayColor: Colors.white24,
+                thumbShape: const RoundSliderThumbShape(
+                  enabledThumbRadius: 6,
+                ),
+                trackHeight: 2,
+              ),
+              child: Slider(
+                value: progress.clamp(0.0, 1.0).toDouble(),
+                onChanged: (value) {
+                  final newPosition = duration * value;
+                  widget.controller.seekTo(newPosition);
+                },
+              ),
             ),
-            trackHeight: 2,
-          ),
-          child: Slider(
-            value: progress.clamp(0.0, 1.0).toDouble(),
-            onChanged: (value) {
-              final newPosition = duration * value;
-              controller.seekTo(newPosition);
-            },
-          ),
-        ),
-        // 时间显示
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(fmt(position),
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              Text(fmt(duration),
-                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
-          ),
-        ),
-      ],
+            // 时间显示
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(fmt(position),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(fmt(duration),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
