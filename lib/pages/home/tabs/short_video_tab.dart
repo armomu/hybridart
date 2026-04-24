@@ -82,7 +82,7 @@ class _NearbyPost {
 /// 两个公开可用的视频链接，循环复用
 final List<_VideoData> _videoList = [
   const _VideoData(
-    url: 'https://www.pexels.com/download/video/33538187/',
+    url: 'http://192.168.1.38:8085/uploads/14261042_1080_1920_60fps.mp4',
     username: '@蝴蝶记录者',
     desc: '大自然的奇妙瞬间，每一帧都是惊喜 🦋',
     likes: 35640,
@@ -100,7 +100,7 @@ final List<_VideoData> _videoList = [
     shares: 2100,
   ),
   const _VideoData(
-    url: 'https://www.pexels.com/download/video/33538187/',
+    url: 'http://192.168.1.38:8085/uploads/14261042_1080_1920_60fps.mp4',
     username: '@自然探索',
     desc: '慢下来，感受生活的美好 ✨',
     likes: 28900,
@@ -234,8 +234,10 @@ class _ShortVideoTabState extends State<ShortVideoTab>
     const titles = ['关注', '精选', '同城'];
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor:
+          _topTabIndex != 2 ? Colors.transparent : const Color(0xFF667eea),
       elevation: 0,
+      centerTitle: true,
       automaticallyImplyLeading: false,
       title: Row(
         mainAxisSize: MainAxisSize.min,
@@ -495,6 +497,7 @@ class _VideoPageState extends State<_VideoPage> {
   bool _initialized = false;
   bool _isPlaying = true;
   bool _showPlayIcon = false;
+  String? _errorMessage; // 错误信息
 
   @override
   void initState() {
@@ -526,16 +529,28 @@ class _VideoPageState extends State<_VideoPage> {
 
   Future<void> _initVideo() async {
     if (_controller != null) return; // 避免重复初始化
-    _controller = VideoPlayerController.networkUrl(
-      Uri.parse(widget.data.url),
-    );
-    await _controller!.initialize();
-    _controller!.setLooping(true);
-    if (widget.isActive) {
-      _controller!.play();
-    }
-    if (mounted) {
-      setState(() => _initialized = true);
+    try {
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.data.url),
+      );
+      await _controller!.initialize();
+      _controller!.setLooping(true);
+      if (widget.isActive) {
+        _controller!.play();
+      }
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+          _errorMessage = null;
+        });
+      }
+    } catch (e) {
+      debugPrint('视频初始化失败: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = '视频加载失败，请检查网络或视频地址';
+        });
+      }
     }
   }
 
@@ -552,12 +567,14 @@ class _VideoPageState extends State<_VideoPage> {
       _showPlayIcon = true;
       if (_isPlaying) {
         _controller!.play();
+        // 播放时，800ms 后隐藏按钮
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted && _isPlaying) setState(() => _showPlayIcon = false);
+        });
       } else {
         _controller!.pause();
+        // 暂停时，按钮一直显示，不自动隐藏
       }
-    });
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) setState(() => _showPlayIcon = false);
     });
   }
 
@@ -569,7 +586,35 @@ class _VideoPageState extends State<_VideoPage> {
         fit: StackFit.expand,
         children: [
           Container(color: Colors.black),
-          if (_initialized && _controller != null)
+          // 错误状态
+          if (_errorMessage != null)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _errorMessage = null;
+                        _initialized = false;
+                      });
+                      _initVideo();
+                    },
+                    child: const Text('重试', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            )
+          // 正常视频播放
+          else if (_initialized && _controller != null)
             Center(
               child: AspectRatio(
                 aspectRatio: _controller!.value.aspectRatio,
@@ -594,7 +639,8 @@ class _VideoPageState extends State<_VideoPage> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _isPlaying ? Icons.play_arrow : Icons.pause,
+                    // 暂停时显示播放图标，播放时显示暂停图标
+                    _isPlaying ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,
                     size: 44,
                   ),
