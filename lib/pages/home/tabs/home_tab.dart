@@ -55,11 +55,28 @@ class _HomeTabState extends State<HomeTab> {
           // ========== 头部区域（渐变背景） ==========
           _buildHeader(context),
 
-          // ========== 内容区域（可滚动） ==========
+          // ========== 内容区域（可滚动 + 下拉刷新） ==========
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
+            child: RefreshIndicator(
+              color: _c.primary,
+              onRefresh: () async {
+                // 模拟网络请求延迟
+                await Future.delayed(const Duration(seconds: 1));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('刷新成功'),
+                      backgroundColor: _c.accent2,
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                }
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                child: Column(
                 children: [
                   const SizedBox(height: 16),
 
@@ -91,6 +108,7 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
           ),
+        ),
         ],
       ),
     );
@@ -479,7 +497,7 @@ class _HomeTabState extends State<HomeTab> {
                     left: 16,
                     bottom: 16,
                     child: Text(
-                      '发现更多精彩',
+                      '更多精彩',
                       style: TextStyle(
                         color: _c.white.withOpacity(0.7),
                         fontSize: 12,
@@ -573,7 +591,7 @@ class _HomeTabState extends State<HomeTab> {
                 Expanded(
                   child: Row(
                     children: [
-                      // 左小块
+                      // 左小块 - 新用户（图标+文字）
                       Expanded(
                         child: Container(
                           margin: const EdgeInsets.only(top: 8),
@@ -590,40 +608,12 @@ class _HomeTabState extends State<HomeTab> {
                               ),
                             ],
                           ),
-                          child: Row(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '新用户',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: _c.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '专属福利',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: _c.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                               Container(
                                 width: 36,
                                 height: 36,
-                                margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
                                   color: _c.accent2.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -634,6 +624,15 @@ class _HomeTabState extends State<HomeTab> {
                                   size: 20,
                                 ),
                               ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '新用户',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: _c.textPrimary,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -641,7 +640,7 @@ class _HomeTabState extends State<HomeTab> {
 
                       const SizedBox(width: 8),
 
-                      // 右小块
+                      // 右小块 - 签到（图标+文字）
                       Expanded(
                         child: Container(
                           margin: const EdgeInsets.only(top: 8),
@@ -658,40 +657,12 @@ class _HomeTabState extends State<HomeTab> {
                               ),
                             ],
                           ),
-                          child: Row(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '签到',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: _c.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '每日奖励',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: _c.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                               Container(
                                 width: 36,
                                 height: 36,
-                                margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
                                   color: _c.accent3.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -700,6 +671,15 @@ class _HomeTabState extends State<HomeTab> {
                                   Icons.calendar_today,
                                   color: _c.accent3,
                                   size: 20,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '签到',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: _c.textPrimary,
                                 ),
                               ),
                             ],
