@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
           // 路由中间件
           routingCallback: (routing) {
             // 可以在这里添加全局路由监听
-            debugPrint('📍 路由: ${routing?.current}');
+            // debugPrint('📍 路由: ${routing?.current}');
           },
 
           // 国际化配置（可选）
