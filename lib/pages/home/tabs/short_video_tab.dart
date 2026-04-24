@@ -683,8 +683,37 @@ class _VideoPageState extends State<_VideoPage> {
         fit: StackFit.expand,
         children: [
           Container(color: Colors.black),
-          // 错误状态
-          if (_errorMessage != null)
+
+          // 中心区域：视频 + 横屏按钮
+          if (_initialized && _controller != null)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 视频（红框调试边框）
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.red, width: 2),
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: _controller!.value.aspectRatio,
+                      child: VideoPlayer(_controller!),
+                    ),
+                  ),
+                  // 横屏观看按钮（仅横屏视频，紧挨红框下方）
+                  if (_isLandscapeVideo)
+                    IconButton(
+                      onPressed: _toggleFullScreen,
+                      icon: const Icon(Icons.screen_rotation,
+                          color: Colors.white70, size: 28),
+                      tooltip: '横屏观看',
+                      padding: const EdgeInsets.only(top: 4),
+                    ),
+                ],
+              ),
+            )
+          else if (_errorMessage != null)
+            // 错误状态
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -694,7 +723,8 @@ class _VideoPageState extends State<_VideoPage> {
                   const SizedBox(height: 12),
                   Text(
                     _errorMessage!,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -706,31 +736,19 @@ class _VideoPageState extends State<_VideoPage> {
                       });
                       _initVideo();
                     },
-                    child:
-                        const Text('重试', style: TextStyle(color: Colors.white)),
+                    child: const Text('重试',
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
             )
-          // 正常视频播放
-          else if (_initialized && _controller != null)
-            Center(
-              child: AspectRatio(
-                aspectRatio: _controller!.value.aspectRatio,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                        color: Colors.red, width: 2), // 调试边框，查看视频实际占比
-                  ),
-                  child: VideoPlayer(_controller!),
-                ),
-              ),
-            )
           else
+            // 加载中
             const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
 
+          // 播放/暂停图标
           if (_showPlayIcon)
             Center(
               child: AnimatedOpacity(
@@ -744,32 +762,9 @@ class _VideoPageState extends State<_VideoPage> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    // 暂停时显示播放图标，播放时显示暂停图标
                     _isPlaying ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,
                     size: 44,
-                  ),
-                ),
-              ),
-            ),
-
-          // 横屏观看按钮（仅横屏视频显示）
-          if (_initialized && _controller != null && _isLandscapeVideo)
-            Positioned(
-              bottom: 100,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: ElevatedButton.icon(
-                  onPressed: _toggleFullScreen,
-                  icon: const Icon(Icons.fullscreen, size: 18),
-                  label: const Text('横屏观看'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black54,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
                   ),
                 ),
               ),
@@ -782,12 +777,12 @@ class _VideoPageState extends State<_VideoPage> {
             child: _buildRightActions(),
           ),
 
-          // 竖屏模式进度条
+          // 竖屏模式进度条（全宽，紧贴底部）
           if (_initialized && _controller != null)
             Positioned(
-              left: 16,
-              right: 80,
-              bottom: 40,
+              left: 0,
+              right: 0,
+              bottom: 0,
               child: _buildProgressBar(),
             ),
 
@@ -795,7 +790,7 @@ class _VideoPageState extends State<_VideoPage> {
           Positioned(
             left: 16,
             right: 80,
-            bottom: 100,
+            bottom: 30,
             child: _buildBottomInfo(),
           ),
         ],
@@ -913,7 +908,7 @@ class _VideoPageState extends State<_VideoPage> {
     );
   }
 
-  /// 构建视频进度条
+  /// 构建视频进度条（无时间数值，全宽，紧贴底部）
   Widget _buildProgressBar() {
     if (_controller == null || !_initialized) return const SizedBox.shrink();
 
@@ -926,57 +921,29 @@ class _VideoPageState extends State<_VideoPage> {
             ? position.inMilliseconds / duration.inMilliseconds
             : 0.0;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 进度条
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: Colors.white,
-                inactiveTrackColor: Colors.white30,
-                thumbColor: Colors.white,
-                overlayColor: Colors.white24,
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 6,
-                ),
-                trackHeight: 2,
-              ),
-              child: Slider(
-                value: progress.clamp(0.0, 1.0).toDouble(),
-                onChanged: (value) {
-                  final newPosition = duration * value;
-                  _controller!.seekTo(newPosition);
-                },
-              ),
+        return SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.white,
+            inactiveTrackColor: Colors.white30,
+            thumbColor: Colors.white,
+            overlayColor: Colors.white24,
+            thumbShape: const RoundSliderThumbShape(
+              enabledThumbRadius: 6,
             ),
-            // 时间显示
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _formatDuration(position),
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  Text(
-                    _formatDuration(duration),
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            trackHeight: 2,
+            // 去掉默认边距，让进度条全宽
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+          ),
+          child: Slider(
+            value: progress.clamp(0.0, 1.0).toDouble(),
+            onChanged: (value) {
+              final newPosition = duration * value;
+              _controller!.seekTo(newPosition);
+            },
+          ),
         );
       },
     );
-  }
-
-  /// 格式化时间显示
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   String _formatCount(int count) {
