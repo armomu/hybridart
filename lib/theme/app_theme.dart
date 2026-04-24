@@ -23,7 +23,6 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFFF5F5F5),
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        centerTitle: true,
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -77,7 +76,6 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        centerTitle: true,
         backgroundColor: Color(0xFF1E1E1E),
         foregroundColor: Colors.white,
         systemOverlayStyle: SystemUiOverlayStyle.light,

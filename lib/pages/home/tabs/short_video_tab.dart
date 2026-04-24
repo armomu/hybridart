@@ -237,7 +237,6 @@ class _ShortVideoTabState extends State<ShortVideoTab>
       backgroundColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
-      centerTitle: true,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: titles.asMap().entries.map((e) {

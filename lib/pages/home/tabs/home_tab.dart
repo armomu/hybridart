@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
 
 /// 首页 Tab - 静态UI
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  final PageController _funcPageController = PageController();
+  int _funcPageIndex = 0;
+
+  @override
+  void dispose() {
+    _funcPageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +26,7 @@ class HomeTab extends StatelessWidget {
         children: [
           // ========== 头部区域（渐变背景） ==========
           _buildHeader(context),
-          
+
           // ========== 内容区域（可滚动） ==========
           Expanded(
             child: SingleChildScrollView(
@@ -20,30 +34,30 @@ class HomeTab extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 16),
-                  
+
                   // -------- 四个带Label的图标按钮 --------
                   _buildIconButtonsRow(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // -------- 可左右滑动的功能卡片 --------
                   _buildFunctionCard(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // -------- 消息通知横条 --------
                   _buildNotificationBanner(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // -------- 16:9 区块组合 --------
                   _buildFeaturedBlocks(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // -------- 信息列表 --------
                   _buildInfoList(),
-                  
+
                   const SizedBox(height: 20),
                 ],
               ),
@@ -87,9 +101,9 @@ class HomeTab extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // 中间 - 搜索输入框
               Expanded(
                 child: Container(
@@ -107,7 +121,8 @@ class HomeTab extends StatelessWidget {
                     },
                     decoration: InputDecoration(
                       hintText: '搜索内容...',
-                      hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                      hintStyle:
+                          TextStyle(color: Colors.grey[500], fontSize: 14),
                       prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -115,9 +130,9 @@ class HomeTab extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // 右边 - 通知图标
               Container(
                 width: 40,
@@ -209,23 +224,41 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  /// 可左右滑动的功能卡片
+  /// 可左右滑动的功能卡片（PageView，每页 2行×5列=10个图标，无标题无label）
   Widget _buildFunctionCard() {
-    final functions = [
-      {'icon': Icons.local_play, 'label': '优惠券'},
-      {'icon': Icons.shopping_cart, 'label': '购物车'},
-      {'icon': Icons.history, 'label': '历史'},
-      {'icon': Icons.favorite, 'label': '收藏'},
-      {'icon': Icons.card_giftcard, 'label': '礼品卡'},
-      {'icon': Icons.credit_card, 'label': '银行卡'},
-      {'icon': Icons.location_on, 'label': '地址'},
-      {'icon': Icons.security, 'label': '安全'},
-      {'icon': Icons.help, 'label': '帮助'},
-      {'icon': Icons.settings, 'label': '设置'},
+    // 10 个图标分 2 页，每页 10 个（2行×5列）
+    // 如需更多页，往这里追加即可
+    final pages = [
+      // 第 1 页
+      [
+        Icons.local_play,
+        Icons.shopping_cart,
+        Icons.history,
+        Icons.favorite,
+        Icons.card_giftcard,
+        Icons.credit_card,
+        Icons.location_on,
+        Icons.security,
+        Icons.help,
+        Icons.settings,
+      ],
+      // 第 2 页（示例第二页）
+      [
+        Icons.directions_car,
+        Icons.flight,
+        Icons.hotel,
+        Icons.restaurant,
+        Icons.local_hospital,
+        Icons.school,
+        Icons.sports_esports,
+        Icons.movie,
+        Icons.music_note,
+        Icons.photo_camera,
+      ],
     ];
 
     return Container(
-      height: 200,
+      height: 160,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -240,54 +273,64 @@ class HomeTab extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // 标题栏
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '常用功能',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+          // PageView 图标区域
+          Expanded(
+            child: PageView.builder(
+              controller: _funcPageController,
+              itemCount: pages.length,
+              onPageChanged: (index) {
+                setState(() => _funcPageIndex = index);
+              },
+              itemBuilder: (context, pageIndex) {
+                final icons = pages[pageIndex];
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 16, 8, 0),
+                  child: Column(
+                    children: [
+                      // 第一行 5 个
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: icons
+                            .take(5)
+                            .map((e) =>
+                                _buildFunctionItem(icon: e, label: 'label'))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      // 第二行 5 个
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: icons
+                            .skip(5)
+                            .map((e) =>
+                                _buildFunctionItem(icon: e, label: 'label'))
+                            .toList(),
+                      ),
+                    ],
                   ),
-                ),
-                Row(
-                  children: [
-                    _buildDot(true),
-                    const SizedBox(width: 4),
-                    _buildDot(false),
-                    const SizedBox(width: 4),
-                    _buildDot(false),
-                  ],
-                ),
-              ],
+                );
+              },
             ),
           ),
-          
-          // 可滑动的功能按钮区域
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  // 第一排 5 个
-                  ...functions.take(5).map((item) => _buildFunctionItem(
-                    icon: item['icon'] as IconData,
-                    label: item['label'] as String,
-                  )),
-                  const SizedBox(width: 24), // 中间间隔
-                  // 第二排 5 个
-                  ...functions.skip(5).map((item) => _buildFunctionItem(
-                    icon: item['icon'] as IconData,
-                    label: item['label'] as String,
-                  )),
-                ],
-              ),
+
+          // 底部分页指示器
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10, top: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(pages.length, (i) {
+                final active = i == _funcPageIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: active ? 16 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: active ? const Color(0xFF667eea) : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
             ),
           ),
         ],
@@ -295,37 +338,20 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildDot(bool active) {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFF667eea) : Colors.grey[300],
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
   Widget _buildFunctionItem({required IconData icon, required String label}) {
     return SizedBox(
-      width: 70,
+      width: 56,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F0F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 24, color: const Color(0xFF667eea)),
-          ),
-          const SizedBox(height: 8),
+          Icon(icon, size: 28, color: const Color(0xFF667eea)),
+          const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            style: const TextStyle(fontSize: 11, color: Colors.black87),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -393,8 +419,8 @@ class HomeTab extends StatelessWidget {
           Expanded(
             flex: 4,
             child: Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -402,7 +428,7 @@ class HomeTab extends StatelessWidget {
                     Color(0xFF764ba2),
                   ],
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   bottomLeft: Radius.circular(16),
                 ),
@@ -445,7 +471,7 @@ class HomeTab extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 右边 60% 上下两块
           Expanded(
             flex: 6,
@@ -514,7 +540,7 @@ class HomeTab extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 // 下边两个小块
                 Expanded(
                   child: Row(
@@ -542,7 +568,8 @@ class HomeTab extends StatelessWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.all(10),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text(
@@ -570,7 +597,8 @@ class HomeTab extends StatelessWidget {
                                 height: 36,
                                 margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF52C41A).withOpacity(0.1),
+                                  color:
+                                      const Color(0xFF52C41A).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -583,9 +611,9 @@ class HomeTab extends StatelessWidget {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(width: 8),
-                      
+
                       // 右小块
                       Expanded(
                         child: Container(
@@ -609,7 +637,8 @@ class HomeTab extends StatelessWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.all(10),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text(
@@ -637,7 +666,8 @@ class HomeTab extends StatelessWidget {
                                 height: 36,
                                 margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFAAD14).withOpacity(0.1),
+                                  color:
+                                      const Color(0xFFFAAD14).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -729,10 +759,10 @@ class HomeTab extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // 分割线
           Container(height: 1, color: Colors.grey[200]),
-          
+
           // 列表项
           ...items.asMap().entries.map((entry) {
             final index = entry.key;
@@ -782,7 +812,7 @@ class HomeTab extends StatelessWidget {
               ],
             );
           }),
-          
+
           const SizedBox(height: 8),
         ],
       ),

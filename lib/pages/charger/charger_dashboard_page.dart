@@ -22,19 +22,23 @@ class ChargerDashboardPage extends StatelessWidget {
         appBar: AppBar(
           title: Obx(() => Text(
                 ctrl.isConnected.value
-                    ? (ctrl.connectedDevice.value?.platformName.isNotEmpty == true
+                    ? (ctrl.connectedDevice.value?.platformName.isNotEmpty ==
+                            true
                         ? ctrl.connectedDevice.value!.platformName
                         : '充电桩设备')
                     : '充电桩控制台',
               )),
-          centerTitle: true,
           bottom: const TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
               Tab(icon: Icon(Icons.history, size: 20), text: '充电记录'),
-              Tab(icon: Icon(Icons.price_change_outlined, size: 20), text: '费率配置'),
-              Tab(icon: Icon(Icons.monitor_heart_outlined, size: 20), text: '设备状态'),
+              Tab(
+                  icon: Icon(Icons.price_change_outlined, size: 20),
+                  text: '费率配置'),
+              Tab(
+                  icon: Icon(Icons.monitor_heart_outlined, size: 20),
+                  text: '设备状态'),
               Tab(icon: Icon(Icons.info_outline, size: 20), text: '版本信息'),
               Tab(icon: Icon(Icons.system_update_alt, size: 20), text: 'OTA升级'),
             ],

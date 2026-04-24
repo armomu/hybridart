@@ -25,7 +25,6 @@ class BleDemoDashboardPage extends StatelessWidget {
                         : '蓝牙设备')
                     : '蓝牙示例',
               )),
-          centerTitle: true,
           bottom: const TabBar(
             tabs: [
               Tab(text: '发送数据'),

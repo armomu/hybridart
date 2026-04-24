@@ -25,7 +25,6 @@ class _BleDemoPageState extends State<BleDemoPage> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text('蓝牙示例'),
-        centerTitle: true,
         actions: [
           // 断开按钮
           Obx(() => ctrl.isConnected.value
@@ -33,8 +32,7 @@ class _BleDemoPageState extends State<BleDemoPage> {
                   onPressed: ctrl.disconnectDevice,
                   icon: Icon(Icons.bluetooth_disabled,
                       size: 18, color: colorScheme.error),
-                  label:
-                      Text('断开', style: TextStyle(color: colorScheme.error)),
+                  label: Text('断开', style: TextStyle(color: colorScheme.error)),
                 )
               : const SizedBox.shrink()),
         ],
@@ -75,11 +73,9 @@ class _BleDemoPageState extends State<BleDemoPage> {
 
       // ── 扫描按钮 ──────────────────────────────────────────────
       floatingActionButton: Obx(() => FloatingActionButton.extended(
-            onPressed:
-                ctrl.isScanning.value ? ctrl.stopScan : ctrl.startScan,
-            icon: Icon(ctrl.isScanning.value
-                ? Icons.stop
-                : Icons.bluetooth_searching),
+            onPressed: ctrl.isScanning.value ? ctrl.stopScan : ctrl.startScan,
+            icon: Icon(
+                ctrl.isScanning.value ? Icons.stop : Icons.bluetooth_searching),
             label: Text(ctrl.isScanning.value ? '停止扫描' : '开始扫描'),
           )),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -128,7 +124,9 @@ class _StatusCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
-                connected ? Icons.bluetooth_connected : Icons.bluetooth_outlined,
+                connected
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth_outlined,
                 color: Colors.white,
                 size: 32,
               ),
@@ -140,7 +138,8 @@ class _StatusCard extends StatelessWidget {
                 children: [
                   Text(
                     connected
-                        ? (ctrl.connectedDevice.value?.platformName.isNotEmpty ==
+                        ? (ctrl.connectedDevice.value?.platformName
+                                    .isNotEmpty ==
                                 true
                             ? ctrl.connectedDevice.value!.platformName
                             : '蓝牙设备')
@@ -215,8 +214,8 @@ class _ScanResultsList extends StatelessWidget {
               size: 80, color: colorScheme.outlineVariant),
           const SizedBox(height: 16),
           Text('点击下方按钮开始扫描',
-              style: TextStyle(
-                  color: colorScheme.onSurfaceVariant, fontSize: 15)),
+              style:
+                  TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 15)),
           const SizedBox(height: 8),
           Text('确保目标蓝牙设备处于广播状态',
               style: TextStyle(color: colorScheme.outline, fontSize: 13)),

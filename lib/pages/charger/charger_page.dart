@@ -25,7 +25,6 @@ class _ChargerPageState extends State<ChargerPage> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text('充电桩管理'),
-        centerTitle: true,
         actions: [
           // 断开按钮
           Obx(() => ctrl.isConnected.value
@@ -33,8 +32,7 @@ class _ChargerPageState extends State<ChargerPage> {
                   onPressed: ctrl.disconnectDevice,
                   icon: Icon(Icons.bluetooth_disabled,
                       size: 18, color: colorScheme.error),
-                  label:
-                      Text('断开', style: TextStyle(color: colorScheme.error)),
+                  label: Text('断开', style: TextStyle(color: colorScheme.error)),
                 )
               : const SizedBox.shrink()),
         ],
@@ -75,11 +73,9 @@ class _ChargerPageState extends State<ChargerPage> {
 
       // ── 扫描按钮 ──────────────────────────────────────────────
       floatingActionButton: Obx(() => FloatingActionButton.extended(
-            onPressed:
-                ctrl.isScanning.value ? ctrl.stopScan : ctrl.startScan,
-            icon: Icon(ctrl.isScanning.value
-                ? Icons.stop
-                : Icons.bluetooth_searching),
+            onPressed: ctrl.isScanning.value ? ctrl.stopScan : ctrl.startScan,
+            icon: Icon(
+                ctrl.isScanning.value ? Icons.stop : Icons.bluetooth_searching),
             label: Text(ctrl.isScanning.value ? '停止扫描' : '开始扫描'),
           )),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -140,7 +136,8 @@ class _StatusCard extends StatelessWidget {
                 children: [
                   Text(
                     connected
-                        ? (ctrl.connectedDevice.value?.platformName.isNotEmpty ==
+                        ? (ctrl.connectedDevice.value?.platformName
+                                    .isNotEmpty ==
                                 true
                             ? ctrl.connectedDevice.value!.platformName
                             : '充电桩设备')
@@ -215,8 +212,8 @@ class _ScanResultsList extends StatelessWidget {
               size: 80, color: colorScheme.outlineVariant),
           const SizedBox(height: 16),
           Text('点击下方按钮开始扫描',
-              style: TextStyle(
-                  color: colorScheme.onSurfaceVariant, fontSize: 15)),
+              style:
+                  TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 15)),
           const SizedBox(height: 8),
           Text('确保充电桩蓝牙处于广播状态',
               style: TextStyle(color: colorScheme.outline, fontSize: 13)),
