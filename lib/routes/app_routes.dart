@@ -5,6 +5,7 @@ import '../pages/lifecycle/lifecycle_detail_page.dart';
 import '../pages/lifecycle/lifecycle_demo_page.dart';
 import '../pages/live/live_page.dart';
 import '../pages/ble_demo/ble_demo_page.dart';
+import 'route_middleware.dart';
 
 /// 路由名称常量
 abstract class Routes {
