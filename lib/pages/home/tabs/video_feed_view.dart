@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -331,7 +332,6 @@ class _VideoPageState extends State<VideoPage> {
         fit: StackFit.expand,
         children: [
           Container(color: Colors.black),
-
           if (_initialized && _controller != null)
             Center(
               child: Column(
@@ -412,7 +412,6 @@ class _VideoPageState extends State<VideoPage> {
             const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
-
           if (_showPlayIcon)
             Center(
               child: AnimatedOpacity(
@@ -433,14 +432,12 @@ class _VideoPageState extends State<VideoPage> {
                 ),
               ),
             ),
-
           if (_initialized && _controller != null)
             Positioned(
               right: 10,
               bottom: 120,
               child: _buildRightActions(),
             ),
-
           if (_initialized && _controller != null)
             Positioned(
               left: 0,
@@ -448,7 +445,6 @@ class _VideoPageState extends State<VideoPage> {
               bottom: 0,
               child: _buildProgressBar(),
             ),
-
           if (_initialized && _controller != null)
             Positioned(
               left: 16,
@@ -491,21 +487,55 @@ class _VideoPageState extends State<VideoPage> {
         _buildActionButton(
             icon: Icons.favorite, color: Colors.red, count: widget.data.likes),
         const SizedBox(height: 20),
-        _buildActionButton(
-            icon: Icons.chat_bubble_rounded,
-            color: Colors.white,
-            count: widget.data.comments),
+        // 评论按钮
+        GestureDetector(
+          onTap: _showCommentBottomSheet,
+          child: Column(
+            children: [
+              const Icon(Icons.chat_bubble_rounded,
+                  color: Colors.white, size: 34),
+              const SizedBox(height: 4),
+              Text(
+                _formatCount(widget.data.comments),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 20),
         _buildActionButton(
             icon: Icons.star_rounded,
             color: Colors.amber,
             count: widget.data.favorites),
         const SizedBox(height: 20),
-        _buildActionButton(
-            icon: Icons.reply,
-            color: Colors.white,
-            count: widget.data.shares,
-            flipHorizontal: true),
+        // 分享按钮
+        GestureDetector(
+          onTap: _showShareBottomSheet,
+          child: Column(
+            children: [
+              Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()..scale(-1.0, 1.0, 1.0),
+                child: const Icon(Icons.reply, color: Colors.white, size: 34),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _formatCount(widget.data.shares),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -613,6 +643,415 @@ class _VideoPageState extends State<VideoPage> {
     }
     return count.toString();
   }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // 评论 BottomSheet
+  // ═════════════════════════════════════════════════════════════════════════
+
+  void _showCommentBottomSheet() {
+    final comments = [
+      const _CommentItem(
+        username: '@观众小明',
+        avatar: Icons.person,
+        content: '这个视频拍得真好！',
+        time: '3分钟前',
+        likes: 128,
+      ),
+      const _CommentItem(
+        username: '@旅行者',
+        avatar: Icons.person,
+        content: '收藏了，下次去这里打卡 📍',
+        time: '15分钟前',
+        likes: 56,
+      ),
+      const _CommentItem(
+        username: '@摄影师小王',
+        avatar: Icons.person,
+        content: '运镜很稳，用的什么稳定器？',
+        time: '1小时前',
+        likes: 42,
+      ),
+      const _CommentItem(
+        username: '@美食家',
+        avatar: Icons.person,
+        content: '旁边那家餐厅也超好吃！推荐大家去试试',
+        time: '2小时前',
+        likes: 89,
+      ),
+      const _CommentItem(
+        username: '@户外达人',
+        avatar: Icons.person,
+        content: '这个地方我去过，风景确实绝了',
+        time: '3小时前',
+        likes: 37,
+      ),
+    ];
+
+    Get.bottomSheet(
+      SafeArea(
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.5,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Column(
+            children: [
+              // 顶部把手
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // 标题栏
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${widget.data.comments} 条评论',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white70, size: 20),
+                      onPressed: () => Get.back(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(color: Colors.white12, height: 1),
+
+              // 评论列表
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: comments.length,
+                  separatorBuilder: (context, index) => const Divider(
+                    color: Colors.white10,
+                    height: 1,
+                    indent: 72,
+                  ),
+                  itemBuilder: (context, index) {
+                    final comment = comments[index];
+                    return _buildCommentItem(comment);
+                  },
+                ),
+              ),
+              const Divider(color: Colors.white12, height: 1),
+              // 评论输入框
+              _buildCommentInput(),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enterBottomSheetDuration: const Duration(milliseconds: 300),
+      exitBottomSheetDuration: const Duration(milliseconds: 200),
+    );
+  }
+
+  Widget _buildCommentItem(_CommentItem comment) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.grey[800],
+            child: Icon(comment.avatar, color: Colors.white70, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  comment.username,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  comment.content,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      comment.time,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(width: 16),
+                    const Text(
+                      '回复',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            children: [
+              const Icon(Icons.favorite_border,
+                  color: Colors.white70, size: 16),
+              const SizedBox(height: 2),
+              Text(
+                '${comment.likes}',
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentInput() {
+    final controller = TextEditingController();
+    return Container(
+      padding: EdgeInsets.only(
+        left: 8,
+        right: 8,
+        top: 8,
+        bottom: MediaQuery.of(context).padding.bottom + 8,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF1A1A1A),
+        border: Border(top: BorderSide(color: Colors.white10)),
+      ),
+      child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: '说点什么...',
+                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                    border: InputBorder.none,
+                    fillColor: Colors.transparent,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.image, color: Colors.white70),
+                onPressed: () {},
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.alternate_email, color: Colors.white70),
+                onPressed: () {},
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              // 微笑图标按钮
+              IconButton(
+                icon: const Icon(Icons.mood, color: Colors.white70),
+                onPressed: () {},
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          )),
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // 分享 BottomSheet
+  // ═════════════════════════════════════════════════════════════════════════
+
+  void _showShareBottomSheet() {
+    final shareItems = [
+      const _ShareItem(icon: Icons.link, label: '复制链接', color: Colors.blue),
+      const _ShareItem(icon: Icons.chat, label: '微信', color: Colors.green),
+      const _ShareItem(icon: Icons.wechat, label: '朋友圈', color: Colors.green),
+      const _ShareItem(icon: Icons.qr_code, label: '二维码', color: Colors.purple),
+      const _ShareItem(
+          icon: Icons.shape_line, label: '系统分享', color: Colors.grey),
+      const _ShareItem(
+          icon: Icons.bookmark_border, label: '收藏', color: Colors.amber),
+      const _ShareItem(icon: Icons.report, label: '举报', color: Colors.red),
+    ];
+
+    Get.bottomSheet(
+      SafeArea(
+          child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 顶部把手
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 分享图标网格
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  childAspectRatio: 0.9,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                ),
+                itemCount: shareItems.length,
+                itemBuilder: (context, index) {
+                  final item = shareItems[index];
+                  return _buildShareItem(item);
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // 取消按钮
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Colors.white10)),
+                ),
+                child: const Center(
+                  child: Text(
+                    '取消',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
+      )),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      enterBottomSheetDuration: const Duration(milliseconds: 300),
+      exitBottomSheetDuration: const Duration(milliseconds: 200),
+    );
+  }
+
+  Widget _buildShareItem(_ShareItem item) {
+    return GestureDetector(
+      onTap: () {
+        Get.back();
+        Get.snackbar(
+          '分享',
+          '已选择${item.label}',
+          backgroundColor: Colors.grey[900],
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 1),
+        );
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: item.color.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(item.icon, color: item.color, size: 26),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.label,
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 评论数据模型（文件私有）
+// ══════════════════════════════════════════════════════════════════════════
+
+class _CommentItem {
+  final String username;
+  final IconData avatar;
+  final String content;
+  final String time;
+  final int likes;
+
+  const _CommentItem({
+    required this.username,
+    required this.avatar,
+    required this.content,
+    required this.time,
+    required this.likes,
+  });
+}
+
+class _ShareItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _ShareItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -658,7 +1097,6 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
                 ),
               ),
             ),
-
             if (_showControls) ...[
               Positioned(
                 top: 40,
@@ -669,7 +1107,6 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
-
               Center(
                 child: ValueListenableBuilder(
                   valueListenable: controller,
@@ -700,7 +1137,6 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
                   },
                 ),
               ),
-
               Positioned(
                 left: 0,
                 right: 0,

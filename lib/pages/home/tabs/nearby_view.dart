@@ -80,13 +80,15 @@ class NearbyView extends StatelessWidget {
     145,
   ];
 
+  NearbyView({super.key});
+
   @override
   Widget build(BuildContext context) {
-    // 顶部占位高度 = AppBar高度
-    const topPadding = kToolbarHeight + 8;
+    // 顶部占位高度 = 状态栏高度 + AppBar高度 + 额外间距
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 8;
 
     return Container(
-      color: Colors.black,
+      color: Colors.black12,
       child: MasonryGridView.count(
         crossAxisCount: 2,
         mainAxisSpacing: 8,

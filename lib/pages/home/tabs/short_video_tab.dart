@@ -44,6 +44,8 @@ class _ShortVideoTabState extends State<ShortVideoTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // 计算顶部偏移：状态栏 + AppBar + 间距
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 8;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
@@ -62,8 +64,8 @@ class _ShortVideoTabState extends State<ShortVideoTab>
             // 精选 — 与关注共用视频流
             VideoFeedView(
                 controller: _getSharedFeedController(), tabIndex: _topTabIndex),
-            // 同城 — 瀑布流布局
-            NearbyView(),
+            // 同城 — 瀑布流布局（传入顶部偏移量）
+            NearbyView(topPadding: topPadding),
           ],
         ),
       ),
@@ -79,7 +81,8 @@ class _ShortVideoTabState extends State<ShortVideoTab>
       backgroundColor: isCityTab ? Colors.black : Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      automaticallyImplyLeading: false,
+
+      // automaticallyImplyLeading: false,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: titles.asMap().entries.map((e) {
@@ -118,12 +121,6 @@ class _ShortVideoTabState extends State<ShortVideoTab>
           );
         }).toList(),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search, color: Colors.white),
-          onPressed: () {},
-        ),
-      ],
     );
   }
 }
