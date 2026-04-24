@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-// ══════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // 数据模型
-// ══════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 
 class NearbyPost {
   final String title;
@@ -61,9 +61,9 @@ final List<NearbyPost> nearbyPosts = [
       coverUrl: 'https://picsum.photos/seed/music1/400/400'),
 ];
 
-// ══════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // 同城视图 — 瀑布流布局
-// ══════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 
 class NearbyView extends StatelessWidget {
   // 不规则图片高度列表（营造瀑布流效果）
@@ -84,16 +84,22 @@ class NearbyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 顶部占位高度 = 状态栏高度 + AppBar高度 + 额外间距
-    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 8;
+    // 顶部占位：
+    //   MediaQuery.padding.top  → 状态栏高度
+    //   + kToolbarHeight        → AppBar 标准高度(56)
+    //   + 12                   → 额外间距（AppBar 底部到内容的空隙）
+    // final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight + 12;
+    // debugPrint(
+    //     'topPadding: ${MediaQuery.of(context).padding.top}=================================');
 
     return Container(
-      color: Colors.black12,
+      color: Colors.black,
       child: MasonryGridView.count(
         crossAxisCount: 2,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        padding: EdgeInsets.fromLTRB(8, topPadding, 8, 8),
+        padding:
+            EdgeInsets.fromLTRB(8, MediaQuery.of(context).padding.top, 8, 8),
         itemCount: nearbyPosts.length,
         itemBuilder: (context, index) {
           final post = nearbyPosts[index];
@@ -105,9 +111,9 @@ class NearbyView extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 // 同城卡片
-// ══════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
 
 class _NearbyCard extends StatelessWidget {
   final NearbyPost post;
