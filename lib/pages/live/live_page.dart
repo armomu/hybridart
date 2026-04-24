@@ -69,7 +69,7 @@ class _LivePageState extends State<LivePage>
       _isPlaying = _vlcController.value.isPlaying;
       _isBuffering = _vlcController.value.isBuffering;
       if (_vlcController.value.hasError) {
-        _errorMessage = _vlcController.value.errorDescription ?? '播放错误';
+        _errorMessage = _vlcController.value.errorDescription;
       }
     });
   }

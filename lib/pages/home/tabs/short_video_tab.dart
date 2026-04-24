@@ -82,8 +82,8 @@ class _NearbyPost {
 /// 两个公开可用的视频链接，循环复用
 final List<_VideoData> _videoList = [
   const _VideoData(
-    url: 'http://192.168.1.38:8085/uploads/14261042_1080_1920_60fps.mp4',
-    username: '@蝴蝶记录者',
+    url: 'https://www.pexels.com/download/video/33538187/',
+    username: '@旅行日记',
     desc: '大自然的奇妙瞬间，每一帧都是惊喜 🦋',
     likes: 35640,
     comments: 13280,
@@ -92,7 +92,7 @@ final List<_VideoData> _videoList = [
   ),
   const _VideoData(
     url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    username: '@旅行日记',
+    username: '@蝴蝶记录者',
     desc: '诗和远方，一起去旅行吧~ 🌊',
     likes: 12800,
     comments: 5200,
@@ -100,7 +100,7 @@ final List<_VideoData> _videoList = [
     shares: 2100,
   ),
   const _VideoData(
-    url: 'http://192.168.1.38:8085/uploads/14261042_1080_1920_60fps.mp4',
+    url: 'https://www.pexels.com/download/video/33538187/',
     username: '@自然探索',
     desc: '慢下来，感受生活的美好 ✨',
     likes: 28900,
@@ -109,7 +109,7 @@ final List<_VideoData> _videoList = [
     shares: 4300,
   ),
   const _VideoData(
-    url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    url: 'https://www.w3schools.com/html/movie.mp4',
     username: '@海边的风',
     desc: '海浪声是最好的白噪音 🌊',
     likes: 19200,
@@ -498,6 +498,8 @@ class _VideoPageState extends State<_VideoPage> {
   bool _isPlaying = true;
   bool _showPlayIcon = false;
   String? _errorMessage; // 错误信息
+  bool _isLandscapeVideo = false; // 是否为横屏视频
+  bool _isFullScreen = false; // 是否横屏观看模式
 
   @override
   void initState() {
@@ -535,6 +537,9 @@ class _VideoPageState extends State<_VideoPage> {
       );
       await _controller!.initialize();
       _controller!.setLooping(true);
+      // 检测是否为横屏视频 (宽高比 >= 1.4 视为横屏)
+      final aspectRatio = _controller!.value.aspectRatio;
+      _isLandscapeVideo = aspectRatio >= 1.4;
       if (widget.isActive) {
         _controller!.play();
       }
@@ -554,8 +559,34 @@ class _VideoPageState extends State<_VideoPage> {
     }
   }
 
+  /// 切换横屏/竖屏观看模式
+  Future<void> _toggleFullScreen() async {
+    if (_isFullScreen) {
+      // 退出横屏
+      await SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.portraitUp]);
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      if (mounted) {
+        setState(() => _isFullScreen = false);
+      }
+    } else {
+      // 进入横屏
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      if (mounted) {
+        setState(() => _isFullScreen = true);
+      }
+    }
+  }
+
   @override
   void dispose() {
+    // 退出时重置为竖屏
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller?.dispose();
     super.dispose();
   }
@@ -580,6 +611,72 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 横屏模式：全屏显示视频，带返回按钮
+    if (_isFullScreen && _initialized && _controller != null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 全屏视频
+            Center(
+              child: AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.red, width: 2), // 调试边框
+                  ),
+                  child: VideoPlayer(_controller!),
+                ),
+              ),
+            ),
+            // 返回按钮
+            Positioned(
+              top: 40,
+              left: 16,
+              child: IconButton(
+                icon:
+                    const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                onPressed: _toggleFullScreen,
+              ),
+            ),
+            // 横屏模式下的播放/暂停按钮
+            if (_showPlayIcon)
+              Center(
+                child: AnimatedOpacity(
+                  opacity: _showPlayIcon ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: GestureDetector(
+                    onTap: _togglePlay,
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: Colors.black45,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 44,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            // 横屏模式下的进度条
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 40,
+              child: _buildProgressBar(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 竖屏模式：正常短视频界面
     return GestureDetector(
       onTap: _togglePlay,
       child: Stack(
@@ -592,7 +689,8 @@ class _VideoPageState extends State<_VideoPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+                  const Icon(Icons.error_outline,
+                      color: Colors.white70, size: 48),
                   const SizedBox(height: 12),
                   Text(
                     _errorMessage!,
@@ -608,7 +706,8 @@ class _VideoPageState extends State<_VideoPage> {
                       });
                       _initVideo();
                     },
-                    child: const Text('重试', style: TextStyle(color: Colors.white)),
+                    child:
+                        const Text('重试', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -618,7 +717,13 @@ class _VideoPageState extends State<_VideoPage> {
             Center(
               child: AspectRatio(
                 aspectRatio: _controller!.value.aspectRatio,
-                child: VideoPlayer(_controller!),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.red, width: 2), // 调试边框，查看视频实际占比
+                  ),
+                  child: VideoPlayer(_controller!),
+                ),
               ),
             )
           else
@@ -648,6 +753,28 @@ class _VideoPageState extends State<_VideoPage> {
               ),
             ),
 
+          // 横屏观看按钮（仅横屏视频显示）
+          if (_initialized && _controller != null && _isLandscapeVideo)
+            Positioned(
+              bottom: 100,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ElevatedButton.icon(
+                  onPressed: _toggleFullScreen,
+                  icon: const Icon(Icons.fullscreen, size: 18),
+                  label: const Text('横屏观看'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // 右侧操作栏
           Positioned(
             right: 10,
@@ -655,11 +782,20 @@ class _VideoPageState extends State<_VideoPage> {
             child: _buildRightActions(),
           ),
 
+          // 竖屏模式进度条
+          if (_initialized && _controller != null)
+            Positioned(
+              left: 16,
+              right: 80,
+              bottom: 40,
+              child: _buildProgressBar(),
+            ),
+
           // 底部信息栏
           Positioned(
             left: 16,
             right: 80,
-            bottom: 40,
+            bottom: 100,
             child: _buildBottomInfo(),
           ),
         ],
@@ -775,6 +911,72 @@ class _VideoPageState extends State<_VideoPage> {
         ),
       ],
     );
+  }
+
+  /// 构建视频进度条
+  Widget _buildProgressBar() {
+    if (_controller == null || !_initialized) return const SizedBox.shrink();
+
+    return ValueListenableBuilder(
+      valueListenable: _controller!,
+      builder: (context, VideoPlayerValue value, child) {
+        final position = value.position;
+        final duration = value.duration;
+        final progress = duration.inMilliseconds > 0
+            ? position.inMilliseconds / duration.inMilliseconds
+            : 0.0;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 进度条
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: Colors.white,
+                inactiveTrackColor: Colors.white30,
+                thumbColor: Colors.white,
+                overlayColor: Colors.white24,
+                thumbShape: const RoundSliderThumbShape(
+                  enabledThumbRadius: 6,
+                ),
+                trackHeight: 2,
+              ),
+              child: Slider(
+                value: progress.clamp(0.0, 1.0).toDouble(),
+                onChanged: (value) {
+                  final newPosition = duration * value;
+                  _controller!.seekTo(newPosition);
+                },
+              ),
+            ),
+            // 时间显示
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _formatDuration(position),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  Text(
+                    _formatDuration(duration),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 格式化时间显示
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   String _formatCount(int count) {

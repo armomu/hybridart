@@ -82,9 +82,8 @@ class OtaUpgradeTab extends StatelessWidget {
                       width: double.infinity,
                       height: 44,
                       child: OutlinedButton.icon(
-                        onPressed: _isLocked(state)
-                            ? null
-                            : () => _pickFile(ctrl),
+                        onPressed:
+                            _isLocked(state) ? null : () => _pickFile(ctrl),
                         icon: const Icon(Icons.folder_open_outlined),
                         label: const Text('选择 .bin 升级包'),
                         style: OutlinedButton.styleFrom(
@@ -312,11 +311,11 @@ class OtaUpgradeTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.green.shade200),
           ),
-          child: Row(
+          child: const Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 28),
-              const SizedBox(width: 12),
-              const Expanded(
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              SizedBox(width: 12),
+              Expanded(
                 child: Text('OTA 升级完成！设备将自动重启。',
                     style: TextStyle(
                         color: Colors.green,
@@ -349,7 +348,9 @@ class OtaUpgradeTab extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(title,
           style: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54)),
     );
   }
 
@@ -394,9 +395,7 @@ class OtaUpgradeTab extends StatelessWidget {
                 return Text(
                   log,
                   style: TextStyle(
-                      color: logColor,
-                      fontSize: 11,
-                      fontFamily: 'monospace'),
+                      color: logColor, fontSize: 11, fontFamily: 'monospace'),
                 );
               },
             ),

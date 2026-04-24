@@ -56,7 +56,8 @@ class _SendDataTabState extends State<SendDataTab>
       for (int i = 0; i < hexStr.length; i += 2) {
         bytes.add(int.parse(hexStr.substring(i, i + 2), radix: 16));
       }
-      ctrl.sendCustomData(bytes, _descCtrl.text.trim().isEmpty ? '自定义数据' : _descCtrl.text.trim());
+      ctrl.sendCustomData(bytes,
+          _descCtrl.text.trim().isEmpty ? '自定义数据' : _descCtrl.text.trim());
     } catch (e) {
       Get.snackbar('格式错误', '请输入有效的十六进制数据（如 AA 01 00 BB）',
           snackPosition: SnackPosition.BOTTOM);
@@ -178,7 +179,9 @@ class _SendDataTabState extends State<SendDataTab>
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(title,
           style: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54)),
     );
   }
 
@@ -186,9 +189,9 @@ class _SendDataTabState extends State<SendDataTab>
     return Container(
       height: 200,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: const BoxDecoration(
+        color: Color(0xFF1E1E2E),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +209,8 @@ class _SendDataTabState extends State<SendDataTab>
                   ctrl.clearSendLogs();
                   ctrl.clearReceiveLogs();
                 },
-                child: const Text('清空', style: TextStyle(color: Colors.blue, fontSize: 11)),
+                child: const Text('清空',
+                    style: TextStyle(color: Colors.blue, fontSize: 11)),
               ),
             ],
           ),
@@ -216,10 +220,18 @@ class _SendDataTabState extends State<SendDataTab>
               // 合并发送和接收日志
               final allLogs = <_MergedLogEntry>[];
               for (final log in ctrl.sendLogs) {
-                allLogs.add(_MergedLogEntry(time: log.time, isSend: true, message: log.message, data: log.data));
+                allLogs.add(_MergedLogEntry(
+                    time: log.time,
+                    isSend: true,
+                    message: log.message,
+                    data: log.data));
               }
               for (final log in ctrl.receiveLogs) {
-                allLogs.add(_MergedLogEntry(time: log.time, isSend: false, message: log.message, data: log.data));
+                allLogs.add(_MergedLogEntry(
+                    time: log.time,
+                    isSend: false,
+                    message: log.message,
+                    data: log.data));
               }
               // 按时间倒序
               allLogs.sort((a, b) => b.time.compareTo(a.time));
@@ -240,7 +252,8 @@ class _SendDataTabState extends State<SendDataTab>
                     padding: const EdgeInsets.only(bottom: 4),
                     child: RichText(
                       text: TextSpan(
-                        style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                        style: const TextStyle(
+                            fontSize: 11, fontFamily: 'monospace'),
                         children: [
                           TextSpan(
                             text: '[${log.time}] ',
@@ -249,7 +262,9 @@ class _SendDataTabState extends State<SendDataTab>
                           TextSpan(
                             text: log.isSend ? '→ ' : '← ',
                             style: TextStyle(
-                              color: log.isSend ? Colors.greenAccent : Colors.cyanAccent,
+                              color: log.isSend
+                                  ? Colors.greenAccent
+                                  : Colors.cyanAccent,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -264,7 +279,10 @@ class _SendDataTabState extends State<SendDataTab>
                             ),
                             TextSpan(
                               text: _formatHex(log.data!),
-                              style: TextStyle(color: log.isSend ? Colors.amberAccent : Colors.cyanAccent),
+                              style: TextStyle(
+                                  color: log.isSend
+                                      ? Colors.amberAccent
+                                      : Colors.cyanAccent),
                             ),
                           ],
                         ],
@@ -281,6 +299,8 @@ class _SendDataTabState extends State<SendDataTab>
   }
 
   String _formatHex(List<int> data) {
-    return data.map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
+    return data
+        .map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase())
+        .join(' ');
   }
 }

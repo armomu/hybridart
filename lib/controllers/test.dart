@@ -1,4 +1,4 @@
-import 'dart:convert';
+// import 'dart:convert';
 
 class EventBus {
   static final _singleton = EventBus._internal();
@@ -20,20 +20,20 @@ class EventBus {
   }
 
   // 处理接收消息
-  void _onData(dynamic strData) {
-    final json = jsonDecode(strData as String);
-    final type = json['type'] as String;
-    final data = json['data'];
+  // void _onData(dynamic strData) {
+  //   final json = jsonDecode(strData as String);
+  //   final type = json['type'] as String;
+  //   final data = json['data'];
 
-    // 分发给特定频道的订阅者
-    _channels[type]?.forEach((handler) {
-      try {
-        handler(data);
-      } catch (e) {
-        print('Handler error for $type: $e');
-      }
-    });
-  }
+  //   // 分发给特定频道的订阅者
+  //   _channels[type]?.forEach((handler) {
+  //     try {
+  //       handler(data);
+  //     } catch (e) {
+  //       print('Handler error for $type: $e');
+  //     }
+  //   });
+  // }
 
   void dispose() {}
 }
