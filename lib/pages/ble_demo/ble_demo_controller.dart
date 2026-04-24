@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -253,26 +254,67 @@ class BleDemoController extends GetxController {
       Get.snackbar('请先选择升级包', '', snackPosition: SnackPosition.BOTTOM);
       return;
     }
+    if (!isConnected.value) {
+      Get.snackbar('未连接设备', '请先连接蓝牙设备', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
     otaState.value = OtaState.uploading;
     otaProgress.value = 0;
     otaLog.add('[${_ts()}] 开始传输升级包...');
 
-    const totalChunks = 20;
-    for (int i = 0; i < totalChunks; i++) {
-      await Future.delayed(const Duration(milliseconds: 150));
-      otaProgress.value = (i + 1) / totalChunks;
-      otaLog.add('[${_ts()}] 发送分包 ${i + 1}/$totalChunks');
-      await _sendCommand([0xAA, 0x05, i, ...List.filled(16, i), 0xBB]);
+    try {
+      // 读取固件文件
+      final file = File(otaFilePath.value);
+      final fileData = await file.readAsBytes();
+      final fileSize = fileData.length;
+      otaLog.add('[${_ts()}] 文件大小: $fileSize bytes');
+
+      // 分包发送参数：每个包最大 244 字节（留 12 字节给协议头）
+      const mtu = 244;
+      final totalChunks = (fileSize / mtu).ceil();
+
+      for (int i = 0; i < totalChunks; i++) {
+        // 等待上一包发送完成（带超时）
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // 计算当前分包数据
+        final start = i * mtu;
+        final end = (start + mtu > fileSize) ? fileSize : start + mtu;
+        final chunk = fileData.sublist(start, end);
+
+        // 构建发送数据：协议头 + 数据内容
+        // 协议格式：[包序号低8位, 包序号高8位, 数据...]
+        final seqLow = i & 0xFF;
+        final seqHigh = (i >> 8) & 0xFF;
+        final payload = <int>[seqLow, seqHigh, ...chunk];
+
+        // 发送分包
+        final ok = await _sendCommand(payload);
+        if (!ok) {
+          otaLog.add('[${_ts()}] ❌ 第 ${i + 1} 包发送失败');
+          otaState.value = OtaState.failed;
+          return;
+        }
+
+        // 更新进度
+        otaProgress.value = (i + 1) / totalChunks;
+        final progress = ((otaProgress.value) * 100).toInt();
+        otaLog.add('[${_ts()}] 包 ${i + 1}/$totalChunks ($progress%)');
+      }
+
+      otaLog.add('[${_ts()}] ✅ 文件发送完成，等待设备校验...');
+      otaState.value = OtaState.verifying;
+
+      // TODO: 通过通知回调接收校验结果，此处暂以超时模拟等待
+      await Future.delayed(const Duration(seconds: 3));
+
+      otaState.value = OtaState.success;
+      otaProgress.value = 1.0;
+      otaLog.add('[${_ts()}] ✅ OTA 升级成功！设备将自动重启。');
+    } catch (e) {
+      otaLog.add('[${_ts()}] ❌ 升级失败: $e');
+      otaState.value = OtaState.failed;
     }
-
-    otaState.value = OtaState.verifying;
-    otaLog.add('[${_ts()}] 传输完成，等待设备校验...');
-    // TODO: 通过通知回调接收校验结果，此处暂以超时模拟等待
-    await Future.delayed(const Duration(seconds: 2));
-
-    otaState.value = OtaState.success;
-    otaProgress.value = 1.0;
-    otaLog.add('[${_ts()}] ✅ OTA 升级成功！设备将自动重启。');
   }
 
   void resetOta() {
