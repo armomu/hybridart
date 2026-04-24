@@ -83,9 +83,9 @@ class _NearbyPost {
 /// 两个公开可用的视频链接，循环复用
 final List<_VideoData> _videoList = [
   const _VideoData(
-    url: 'https://www.pexels.com/download/video/33538187/',
-    username: '@旅行日记',
-    desc: '大自然的奇妙瞬间，每一帧都是惊喜 🦋',
+    url: 'https://www.pexels.com/zh-cn/download/video/37235780/',
+    username: '@小猫咪',
+    desc: '小猫咪，请给我来点cats~ 🐱',
     likes: 35640,
     comments: 13280,
     favorites: 8520,
@@ -223,7 +223,7 @@ class _ShortVideoTabState extends State<ShortVideoTab>
             // 精选 — 与关注共用视频流
             _VideoFeedView(
                 controller: _getSharedFeedController(), tabIndex: _topTabIndex),
-            // 同城 — 图文左右双列
+            // 同城 — 瀑布流布局
             _NearbyView(),
           ],
         ),
@@ -237,55 +237,49 @@ class _ShortVideoTabState extends State<ShortVideoTab>
     final isCityTab = _topTabIndex == 2;
 
     return AppBar(
-      backgroundColor: isCityTab ? Colors.grey[900] : Colors.transparent,
-      elevation: 0,
-      centerTitle: true,
-      automaticallyImplyLeading: false,
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: titles.asMap().entries.map((e) {
-          final active = e.key == _topTabIndex;
-          return GestureDetector(
-            onTap: () {
-              _tabPageController.animateToPage(
-                e.key,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-              );
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    e.value,
-                    style: TextStyle(
-                      color: active ? Colors.white : Colors.white60,
-                      fontSize: active ? 16 : 15,
-                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
+        backgroundColor: isCityTab ? Colors.black : Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: titles.asMap().entries.map((e) {
+            final active = e.key == _topTabIndex;
+            return GestureDetector(
+              onTap: () {
+                _tabPageController.animateToPage(
+                  e.key,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                );
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      e.value,
+                      style: TextStyle(
+                        color: active ? Colors.white : Colors.white60,
+                        fontSize: active ? 16 : 15,
+                        fontWeight:
+                            active ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Container(
-                    width: 20,
-                    height: 2,
-                    color: active ? Colors.white : Colors.transparent,
-                  ),
-                ],
+                    const SizedBox(height: 3),
+                    Container(
+                      width: 20,
+                      height: 2,
+                      color: active ? Colors.white : Colors.transparent,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        }).toList(),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search, color: Colors.white),
-          onPressed: () {},
-        ),
-      ],
-    );
+            );
+          }).toList(),
+        ));
   }
 }
 
@@ -395,13 +389,18 @@ class _NearbyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // extendBodyBehindAppBar: true 时，body从屏幕顶部开始
+    // AppBar 实际总高度 = 状态栏 + kToolbarHeight
+    // 但状态栏是透明的，只需跳过AppBar的toolbar部分
+    const topPadding = kToolbarHeight + 32;
+
     return Container(
-      color: Colors.grey[900],
+      color: Colors.black,
       child: MasonryGridView.count(
         crossAxisCount: 2,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.fromLTRB(8, topPadding, 8, 8),
         itemCount: _nearbyPosts.length,
         itemBuilder: (context, index) {
           final post = _nearbyPosts[index];
