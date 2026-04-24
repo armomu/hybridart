@@ -562,20 +562,20 @@ class _VideoPageState extends State<_VideoPage> {
   /// 切换横屏/竖屏观看模式
   Future<void> _toggleFullScreen() async {
     if (_isFullScreen) {
-      // 退出横屏
+      // 退出横屏：恢复竖屏并恢复系统UI（状态栏+底部手势条）
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       await SystemChrome.setPreferredOrientations(
           [DeviceOrientation.portraitUp]);
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       if (mounted) {
         setState(() => _isFullScreen = false);
       }
     } else {
-      // 进入横屏
+      // 进入横屏：隐藏系统UI
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       if (mounted) {
         setState(() => _isFullScreen = true);
       }
@@ -584,9 +584,9 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   void dispose() {
-    // 退出时重置为竖屏
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // 退出时恢复系统UI和竖屏方向
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _controller?.dispose();
     super.dispose();
   }
