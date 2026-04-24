@@ -559,26 +559,48 @@ class _VideoPageState extends State<_VideoPage> {
     }
   }
 
-  /// 切换横屏/竖屏观看模式
+  /// 进入横屏全屏观看模式（推入新页面）
+  Future<void> _enterFullScreen() async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    if (!mounted) return;
+    // 推入全屏视频页面
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => _FullScreenVideoPage(
+          controller: _controller!,
+          isPlaying: _isPlaying,
+          onTogglePlay: _togglePlay,
+          onExit: _exitFullScreen,
+          buildProgressBar: _buildProgressBar,
+        ),
+      ),
+    );
+    // 从全屏页面返回后，恢复竖屏
+    _exitFullScreen();
+  }
+
+  /// 退出横屏，恢复竖屏
+  Future<void> _exitFullScreen() async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.portraitUp]);
+    if (mounted) {
+      setState(() => _isFullScreen = false);
+    }
+  }
+
+  /// 切换横屏/竖屏（供按钮调用）
   Future<void> _toggleFullScreen() async {
     if (_isFullScreen) {
-      // 退出横屏：恢复竖屏并恢复系统UI（状态栏+底部手势条）
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      await SystemChrome.setPreferredOrientations(
-          [DeviceOrientation.portraitUp]);
-      if (mounted) {
-        setState(() => _isFullScreen = false);
-      }
+      _exitFullScreen();
     } else {
-      // 进入横屏：隐藏系统UI
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-      if (mounted) {
-        setState(() => _isFullScreen = true);
-      }
+      _isFullScreen = true;
+      _enterFullScreen();
     }
   }
 
@@ -611,71 +633,6 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 横屏模式：全屏显示视频，带返回按钮
-    if (_isFullScreen && _initialized && _controller != null) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 全屏视频
-            Center(
-              child: AspectRatio(
-                aspectRatio: _controller!.value.aspectRatio,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.red, width: 2), // 调试边框
-                  ),
-                  child: VideoPlayer(_controller!),
-                ),
-              ),
-            ),
-            // 返回按钮
-            Positioned(
-              top: 40,
-              left: 16,
-              child: IconButton(
-                icon:
-                    const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                onPressed: _toggleFullScreen,
-              ),
-            ),
-            // 横屏模式下的播放/暂停按钮
-            if (_showPlayIcon)
-              Center(
-                child: AnimatedOpacity(
-                  opacity: _showPlayIcon ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: GestureDetector(
-                    onTap: _togglePlay,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: const BoxDecoration(
-                        color: Colors.black45,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 44,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            // 横屏模式下的进度条
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 40,
-              child: _buildProgressBar(),
-            ),
-          ],
-        ),
-      );
-    }
-
     // 竖屏模式：正常短视频界面
     return GestureDetector(
       onTap: _togglePlay,
@@ -702,12 +659,33 @@ class _VideoPageState extends State<_VideoPage> {
                   ),
                   // 横屏观看按钮（仅横屏视频，紧挨红框下方）
                   if (_isLandscapeVideo)
-                    IconButton(
-                      onPressed: _toggleFullScreen,
-                      icon: const Icon(Icons.screen_rotation,
-                          color: Colors.white70, size: 28),
-                      tooltip: '横屏观看',
-                      padding: const EdgeInsets.only(top: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: GestureDetector(
+                        onTap: _toggleFullScreen,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05), // 玻璃质感
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                                width: 0.5),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.screen_rotation,
+                                  color: Colors.white70, size: 16),
+                              SizedBox(width: 4),
+                              Text('横屏观看',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -723,8 +701,7 @@ class _VideoPageState extends State<_VideoPage> {
                   const SizedBox(height: 12),
                   Text(
                     _errorMessage!,
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 14),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -736,8 +713,8 @@ class _VideoPageState extends State<_VideoPage> {
                       });
                       _initVideo();
                     },
-                    child: const Text('重试',
-                        style: TextStyle(color: Colors.white)),
+                    child:
+                        const Text('重试', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -951,5 +928,83 @@ class _VideoPageState extends State<_VideoPage> {
       return '${(count / 10000).toStringAsFixed(1)}w';
     }
     return count.toString();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 全屏视频页面（横屏观看体验）
+// ═══════════════════════════════════════════════════════════════
+
+class _FullScreenVideoPage extends StatefulWidget {
+  final VideoPlayerController controller;
+  final bool isPlaying;
+  final VoidCallback onTogglePlay;
+  final Future<void> Function() onExit;
+  final Widget Function() buildProgressBar;
+
+  const _FullScreenVideoPage({
+    required this.controller,
+    required this.isPlaying,
+    required this.onTogglePlay,
+    required this.onExit,
+    required this.buildProgressBar,
+  });
+
+  @override
+  State<_FullScreenVideoPage> createState() => _FullScreenVideoPageState();
+}
+
+class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
+  bool _showOverlay = true; // 是否显示返回按钮和进度条
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        onTap: () {
+          setState(() => _showOverlay = !_showOverlay);
+          widget.onTogglePlay(); // 同步播放/暂停状态
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 全屏视频（等比缩放占满）
+            Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.height *
+                      widget.controller.value.aspectRatio,
+                  height: MediaQuery.of(context).size.height,
+                  child: VideoPlayer(widget.controller),
+                ),
+              ),
+            ),
+
+            // 返回按钮 + 进度条（可切换显示/隐藏）
+            if (_showOverlay) ...[
+              // 返回按钮
+              Positioned(
+                top: 40,
+                left: 16,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              // 进度条（底部）
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 40,
+                child: widget.buildProgressBar(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
