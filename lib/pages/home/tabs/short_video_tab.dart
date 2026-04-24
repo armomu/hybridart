@@ -955,7 +955,7 @@ class _FullScreenVideoPage extends StatefulWidget {
 }
 
 class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
-  bool _showOverlay = true; // 是否显示返回按钮和进度条
+  bool _showControls = false; // 是否显示控制栏（默认不显示）
 
   @override
   Widget build(BuildContext context) {
@@ -963,8 +963,7 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () {
-          setState(() => _showOverlay = !_showOverlay);
-          widget.onTogglePlay(); // 同步播放/暂停状态
+          setState(() => _showControls = !_showControls);
         },
         child: Stack(
           fit: StackFit.expand,
@@ -982,9 +981,9 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
               ),
             ),
 
-            // 返回按钮 + 进度条（可切换显示/隐藏）
-            if (_showOverlay) ...[
-              // 返回按钮
+            // 控制栏（显示时：返回按钮、播放按钮、进度条+时间）
+            if (_showControls) ...[
+              // 顶部：返回按钮
               Positioned(
                 top: 40,
                 left: 16,
@@ -994,17 +993,100 @@ class _FullScreenVideoPageState extends State<_FullScreenVideoPage> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
-              // 进度条（底部）
+
+              // 中央：播放/暂停按钮
+              Center(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {}); // 触发重建以更新图标
+                    widget.onTogglePlay();
+                  },
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: const BoxDecoration(
+                      color: Colors.black45,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      widget.isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                ),
+              ),
+
+              // 底部：进度条 + 时间
               Positioned(
-                left: 20,
-                right: 20,
-                bottom: 40,
-                child: widget.buildProgressBar(),
+                left: 0,
+                right: 0,
+                bottom: 20,
+                child: _buildFullScreenProgressBar(),
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  /// 全屏模式下的进度条（带时间显示）
+  Widget _buildFullScreenProgressBar() {
+    if (!widget.controller.value.isInitialized) {
+      return const SizedBox.shrink();
+    }
+
+    final controller = widget.controller;
+    final position = controller.value.position;
+    final duration = controller.value.duration;
+    final progress = duration.inMilliseconds > 0
+        ? position.inMilliseconds / duration.inMilliseconds
+        : 0.0;
+
+    String fmt(Duration d) {
+      final m = d.inMinutes;
+      final s = d.inSeconds % 60;
+      return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 进度条（全宽）
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.white,
+            inactiveTrackColor: Colors.white30,
+            thumbColor: Colors.white,
+            overlayColor: Colors.white24,
+            thumbShape: const RoundSliderThumbShape(
+              enabledThumbRadius: 6,
+            ),
+            trackHeight: 2,
+          ),
+          child: Slider(
+            value: progress.clamp(0.0, 1.0).toDouble(),
+            onChanged: (value) {
+              final newPosition = duration * value;
+              controller.seekTo(newPosition);
+            },
+          ),
+        ),
+        // 时间显示
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(fmt(position),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(fmt(duration),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
