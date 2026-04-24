@@ -67,6 +67,8 @@ class _SendDataTabState extends State<SendDataTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Column(
       children: [
@@ -78,11 +80,11 @@ class _SendDataTabState extends State<SendDataTab>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── 说明 ─────────────────────────────────────
-                _buildInfoBanner(),
+                _buildInfoBanner(context),
                 const SizedBox(height: 16),
 
                 // ── 自定义发送 ─────────────────────────────────
-                _buildSectionTitle('自定义发送'),
+                _buildSectionTitle('自定义发送', theme),
                 Card(
                   elevation: 1,
                   shape: RoundedRectangleBorder(
@@ -98,9 +100,19 @@ class _SendDataTabState extends State<SendDataTab>
                             labelText: '描述（可选）',
                             hintText: '如：设置费率',
                             filled: true,
-                            fillColor: Colors.grey.shade50,
+                            fillColor: colorScheme.surface,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  BorderSide(color: colorScheme.outline),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  BorderSide(color: colorScheme.primary),
                             ),
                           ),
                         ),
@@ -110,11 +122,22 @@ class _SendDataTabState extends State<SendDataTab>
                           decoration: InputDecoration(
                             labelText: '十六进制数据',
                             hintText: '如: AA 01 00 BB',
-                            prefixIcon: const Icon(Icons.code),
+                            prefixIcon:
+                                Icon(Icons.code, color: colorScheme.primary),
                             filled: true,
-                            fillColor: Colors.grey.shade50,
+                            fillColor: colorScheme.surface,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  BorderSide(color: colorScheme.outline),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  BorderSide(color: colorScheme.primary),
                             ),
                           ),
                           style: const TextStyle(fontFamily: 'monospace'),
@@ -150,23 +173,24 @@ class _SendDataTabState extends State<SendDataTab>
     );
   }
 
-  Widget _buildInfoBanner() {
+  Widget _buildInfoBanner(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: colorScheme.primaryContainer.withOpacity(0.3),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, size: 18, color: Colors.blue[600]),
+          Icon(Icons.info_outline, size: 18, color: colorScheme.primary),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               '发送数据示例：选择预设命令或输入自定义十六进制数据进行测试。发送的数据将显示在下方日志中。',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
             ),
           ),
         ],
@@ -174,14 +198,14 @@ class _SendDataTabState extends State<SendDataTab>
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(title,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.black54)),
+              color: theme.colorScheme.onSurfaceVariant)),
     );
   }
 
