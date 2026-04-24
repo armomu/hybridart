@@ -101,12 +101,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBottomNavBar(BuildContext context) {
+    // 短视频Tab选中时，底部导航栏使用深色背景
+    final isVideoTab = _currentIndex == 1;
+    final bgColor = isVideoTab ? Colors.black : Theme.of(context).colorScheme.surface;
+    final shadowColor = isVideoTab ? Colors.transparent : Colors.black.withOpacity(0.08);
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: bgColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: shadowColor,
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -163,8 +168,11 @@ class _HomePageState extends State<HomePage> {
   }) {
     final bool isActive = _currentIndex == navIndex;
     final isLoaded = _tabLoaded[navIndex] ?? false;
-    final color =
-        isActive ? Theme.of(context).colorScheme.primary : Colors.grey[600]!;
+    // 短视频Tab选中时，使用浅色图标；其他Tab使用主题色
+    final bool isDarkBg = _currentIndex == 1;
+    final color = isDarkBg
+        ? (isActive ? Colors.white : Colors.white70)
+        : (isActive ? Theme.of(context).colorScheme.primary : Colors.grey[600]!);
 
     return Expanded(
       child: InkWell(
