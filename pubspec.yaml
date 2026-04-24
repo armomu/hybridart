@@ -43,6 +43,9 @@ dependencies:
   # VLC 播放器，支持 rtmp 直播流
   flutter_vlc_player: ^7.4.1
 
+  # 瀑布流布局
+  flutter_staggered_grid_view: ^0.7.0
+
   # 蓝牙 BLE，支持扫描/连接/读写特征
   flutter_blue_plus: ^1.35.3
 

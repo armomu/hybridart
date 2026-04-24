@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 可见性检测 Widget
@@ -232,10 +233,11 @@ class _ShortVideoTabState extends State<ShortVideoTab>
 
   PreferredSizeWidget _buildTopBar() {
     const titles = ['关注', '精选', '同城'];
+    // 同城Tab使用深色背景
+    final isCityTab = _topTabIndex == 2;
 
     return AppBar(
-      backgroundColor:
-          _topTabIndex != 2 ? Colors.transparent : const Color(0xFF667eea),
+      backgroundColor: isCityTab ? Colors.grey[900] : Colors.transparent,
       elevation: 0,
       centerTitle: true,
       automaticallyImplyLeading: false,
@@ -377,31 +379,34 @@ class _VideoFeedViewState extends State<_VideoFeedView>
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _NearbyView extends StatelessWidget {
+  // 不规则图片高度列表（营造瀑布流效果）
+  final List<double> _imageHeights = [
+    120,
+    180,
+    140,
+    200,
+    160,
+    150,
+    190,
+    130,
+    170,
+    145,
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.grey[100],
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        itemCount: (_nearbyPosts.length / 2).ceil(),
-        itemBuilder: (context, rowIndex) {
-          final left = _nearbyPosts[rowIndex * 2];
-          final right = rowIndex * 2 + 1 < _nearbyPosts.length
-              ? _nearbyPosts[rowIndex * 2 + 1]
-              : null;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _NearbyCard(post: left)),
-                if (right != null) ...[
-                  const SizedBox(width: 8),
-                  Expanded(child: _NearbyCard(post: right)),
-                ],
-              ],
-            ),
-          );
+      color: Colors.grey[900],
+      child: MasonryGridView.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        padding: const EdgeInsets.all(8),
+        itemCount: _nearbyPosts.length,
+        itemBuilder: (context, index) {
+          final post = _nearbyPosts[index];
+          final imageHeight = _imageHeights[index % _imageHeights.length];
+          return _NearbyCard(post: post, imageHeight: imageHeight);
         },
       ),
     );
@@ -410,39 +415,45 @@ class _NearbyView extends StatelessWidget {
 
 class _NearbyCard extends StatelessWidget {
   final _NearbyPost post;
-  const _NearbyCard({required this.post});
+  final double imageHeight;
+  const _NearbyCard({
+    required this.post,
+    required this.imageHeight,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      elevation: 1,
+      color: Colors.grey[850],
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 封面图
-          AspectRatio(
-            aspectRatio: 1,
-            child: Image.network(
-              post.coverUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: Colors.grey[300],
-                child: const Icon(Icons.image, color: Colors.grey, size: 40),
-              ),
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return Container(
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                );
-              },
+          // 封面图（不规则高度）
+          Image.network(
+            post.coverUrl,
+            height: imageHeight,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              height: imageHeight,
+              color: Colors.grey[800],
+              child: const Icon(Icons.image, color: Colors.grey, size: 40),
             ),
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return Container(
+                height: imageHeight,
+                color: Colors.grey[800],
+                child: const Center(
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white70),
+                ),
+              );
+            },
           ),
-          // 文字信息
+          // 文字信息（深色主题）
           Padding(
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -453,6 +464,7 @@ class _NearbyCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -460,7 +472,7 @@ class _NearbyCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   post.subtitle,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 11, color: Colors.grey[400]),
                 ),
               ],
             ),
