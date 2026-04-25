@@ -76,7 +76,7 @@ class _ShortVideoTabState extends State<ShortVideoTab>
           },
           children: [
             // 关注 — 与精选共用视频流
-            VideoFeedView(controller: _feedCtrl, tabIndex: _topTabIndex),
+            const Center(child: Text('关注')),
             // 精选 — 与关注共用视频流
             VideoFeedView(controller: _feedCtrl, tabIndex: _topTabIndex),
             // 同城 — 瀑布流布局（由 NearbyView 自行处理顶部偏移）

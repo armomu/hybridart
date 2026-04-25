@@ -49,7 +49,7 @@ class _LivePageState extends State<LivePage>
   void _initVlcPlayer() {
     _vlcController = VlcPlayerController.network(
       'rtmp://ns8.indexforce.com/home/mystream',
-      autoPlay: false,
+      autoPlay: true,
       hwAcc: HwAcc.full,
       options: VlcPlayerOptions(
         rtp: VlcRtpOptions([
@@ -110,6 +110,7 @@ class _LivePageState extends State<LivePage>
         children: [
           // ── 1. 背景：视频区域（全屏） ─────────────────────────────────
           _buildVideoArea(),
+          // _buildVideoBackground(),
 
           // ── 2. 顶部渐变遮罩 ───────────────────────────────────────────
           _buildTopGradient(),
@@ -137,10 +138,27 @@ class _LivePageState extends State<LivePage>
   // ════════════════════════════════════════════════════════════════════════
 
   Widget _buildVideoArea() {
-    return VlcPlayer(
-      controller: _vlcController,
-      aspectRatio: 9 / 16,
-      placeholder: _buildLoadingPlaceholder(),
+    return GestureDetector(
+      onTap: () async {
+        final p = await _vlcController.isPlaying();
+        if (p == true) {
+          _isPlaying = false;
+          _vlcController.pause();
+        } else {
+          _isPlaying = true;
+          _vlcController.play();
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white, width: 1),
+        ),
+        child: VlcPlayer(
+          controller: _vlcController,
+          aspectRatio: 9 / 16,
+          placeholder: _buildLoadingPlaceholder(),
+        ),
+      ),
     );
   }
 
@@ -173,24 +191,29 @@ class _LivePageState extends State<LivePage>
 
   /// 视频背景区域
   Widget _buildVideoBackground() {
-    return Container(
-      color: const Color.fromARGB(255, 94, 217, 231),
-      child: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.live_tv, size: 64, color: Colors.white24),
-            SizedBox(height: 12),
-            Text(
-              '直播间视频区域',
-              style: TextStyle(color: Colors.white38, fontSize: 14),
-            ),
-            SizedBox(height: 4),
-            Text(
-              '（视频播放器待接入）',
-              style: TextStyle(color: Colors.white24, fontSize: 12),
-            ),
-          ],
+    return GestureDetector(
+      onTap: () {
+        _vlcController.play();
+      },
+      child: Container(
+        color: Colors.black,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.live_tv, size: 64, color: Colors.white24),
+              SizedBox(height: 12),
+              Text(
+                '直播间视频区域',
+                style: TextStyle(color: Colors.white38, fontSize: 14),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '（视频播放器待接入）',
+                style: TextStyle(color: Colors.white24, fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -458,7 +481,7 @@ class _LivePageState extends State<LivePage>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final safePadding = bottomPadding > 0 ? bottomPadding : 16.0;
     return Container(
-      padding: EdgeInsets.fromLTRB(8, 0, 8, safePadding + 8),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, safePadding + 8),
       child: Row(
         children: [
           // ── 输入框（60%宽）+ 表情 ─────────────────────────────────
