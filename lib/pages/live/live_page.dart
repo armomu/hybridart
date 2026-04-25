@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'gift_lottie_overlay.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -21,7 +21,9 @@ class LivePage extends StatefulWidget {
   State<LivePage> createState() => _LivePageState();
 }
 
-class _LivePageState extends State<LivePage> {
+class _LivePageState extends State<LivePage>
+    with SingleTickerProviderStateMixin {
+  late VlcPlayerController _vlcController;
   // ── 状态 ──────────────────────────────────────────────────────────────────
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -39,6 +41,37 @@ class _LivePageState extends State<LivePage> {
 
   // 是否显示输入模式
   bool _showInput = false;
+  // 播放状态
+  bool _isPlaying = false;
+  bool _isBuffering = true;
+  String _errorMessage = '';
+
+  void _initVlcPlayer() {
+    _vlcController = VlcPlayerController.network(
+      'rtmp://ns8.indexforce.com/home/mystream',
+      autoPlay: true,
+      hwAcc: HwAcc.full,
+      options: VlcPlayerOptions(
+        rtp: VlcRtpOptions([
+          '--rtsp-tcp',
+          '--live-caching=0',
+          '--network-caching=300',
+        ]),
+      ),
+    );
+    _vlcController.addListener(_onVlcStateChanged);
+  }
+
+  void _onVlcStateChanged() {
+    if (!mounted) return;
+    setState(() {
+      _isPlaying = _vlcController.value.isPlaying;
+      _isBuffering = _vlcController.value.isBuffering;
+      if (_vlcController.value.hasError) {
+        _errorMessage = _vlcController.value.errorDescription;
+      }
+    });
+  }
 
   // ════════════════════════════════════════════════════════════════════════
   // 生命周期
@@ -47,22 +80,17 @@ class _LivePageState extends State<LivePage> {
   @override
   void initState() {
     super.initState();
+    _initVlcPlayer();
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: [SystemUiOverlay.top], // 只显示顶部
     );
-    // SystemChrome.setSystemUIOverlayStyle(
-    //   const SystemUiOverlayStyle(
-    //     statusBarColor: Colors.transparent, // 顶部透明
-    //     systemNavigationBarColor: Colors.transparent, // 底部透明
-    //     systemNavigationBarIconBrightness: Brightness.dark, // 图标颜色
-    //     statusBarIconBrightness: Brightness.dark,
-    //   ),
-    // );
   }
 
   @override
   void dispose() {
+    _vlcController.removeListener(_onVlcStateChanged);
+    _vlcController.dispose();
     _chatController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -81,7 +109,7 @@ class _LivePageState extends State<LivePage> {
         fit: StackFit.expand,
         children: [
           // ── 1. 背景：视频区域（全屏） ─────────────────────────────────
-          _buildVideoBackground(),
+          _buildVideoArea(),
 
           // ── 2. 顶部渐变遮罩 ───────────────────────────────────────────
           _buildTopGradient(),
@@ -107,6 +135,41 @@ class _LivePageState extends State<LivePage> {
   // ════════════════════════════════════════════════════════════════════════
   // 区域构建
   // ════════════════════════════════════════════════════════════════════════
+
+  Widget _buildVideoArea() {
+    return VlcPlayer(
+      controller: _vlcController,
+      aspectRatio: 9 / 16,
+      placeholder: _buildLoadingPlaceholder(),
+    );
+  }
+
+  // 视频加载占位
+  Widget _buildLoadingPlaceholder() {
+    return Container(
+      color: Colors.black,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _isBuffering ? '正在连接直播...' : '等待直播开始',
+              style: const TextStyle(color: Colors.white60, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// 视频背景区域
   Widget _buildVideoBackground() {
