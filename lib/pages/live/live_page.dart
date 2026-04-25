@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 直播独立页面
+// 直播间页面（纯 UI 展示版）
+// 布局参考：抖音直播间全屏沉浸式设计
+//
+// 保留区域：
+//   - 顶部：主播信息（左）+ 观众信息+关闭（右）
+//   - 左下：聊天弹幕区（带半透明黑色背景）
+//   - 底部：输入框(60%宽)+表情、购物车、礼物、分享
+// 暂不实现：视频播放、弹幕逻辑、礼物动画
 // ═══════════════════════════════════════════════════════════════════════════
 
 class LivePage extends StatefulWidget {
@@ -13,90 +19,541 @@ class LivePage extends StatefulWidget {
   State<LivePage> createState() => _LivePageState();
 }
 
-class _LivePageState extends State<LivePage>
-    with SingleTickerProviderStateMixin {
-  late VlcPlayerController _vlcController;
-  late TabController _tabController;
+class _LivePageState extends State<LivePage> {
+  // ── 状态 ──────────────────────────────────────────────────────────────────
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<_ChatMessage> _chatMessages = [];
 
-  // 播放状态
-  bool _isPlaying = false;
-  bool _isBuffering = true;
-  String _errorMessage = '';
-
-  // 模拟聊天数据
-  static const List<_ChatMessage> _mockMessages = [
-    _ChatMessage(username: '小明', content: '主播好棒！', color: Colors.pink),
-    _ChatMessage(username: '阳光', content: '这个风景太美了', color: Colors.orange),
-    _ChatMessage(username: '花开', content: '支持支持 👍', color: Colors.purple),
-    _ChatMessage(username: '星空', content: '请问这是在哪里拍的？', color: Colors.blue),
-    _ChatMessage(username: '云游', content: '好想出去玩啊', color: Colors.green),
-    _ChatMessage(username: '晨曦', content: '第一次看直播，好激动', color: Colors.teal),
-    _ChatMessage(username: '落叶', content: '画面很清晰！', color: Colors.indigo),
+  // 模拟弹幕数据
+  final List<_DanmakuItem> _danmakuList = [
+    const _DanmakuItem('真真不悔', '主播好美呀', Color(0xFFE91E63)),
+    const _DanmakuItem('老班长启玉', '这个笑容我心动了', Color(0xFFFF5722)),
+    const _DanmakuItem('西二旗华仔', '画质清晰，点赞！', Color(0xFF9C27B0)),
+    const _DanmakuItem('小米女神', '第一次来，支持一下', Color(0xFF2196F3)),
+    const _DanmakuItem('回龙观猫猫', '这也太好看了吧', Color(0xFF4CAF50)),
+    const _DanmakuItem('北漂小王', '求关注求关注', Color(0xFF00BCD4)),
   ];
+
+  // 是否显示输入模式
+  bool _showInput = false;
+
+  // ════════════════════════════════════════════════════════════════════════
+  // 生命周期
+  // ════════════════════════════════════════════════════════════════════════
 
   @override
   void initState() {
     super.initState();
-    _initVlcPlayer();
-    _tabController = TabController(length: 3, vsync: this);
-    _chatMessages.addAll(_mockMessages);
-    // 沉浸式状态栏
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
-  }
-
-  void _initVlcPlayer() {
-    _vlcController = VlcPlayerController.network(
-      'rtmp://ns8.indexforce.com/home/mystream',
-      autoPlay: true,
-      hwAcc: HwAcc.full,
-      options: VlcPlayerOptions(
-        rtp: VlcRtpOptions([
-          '--rtsp-tcp',
-          '--live-caching=0',
-          '--network-caching=300',
-        ]),
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
     );
-    _vlcController.addListener(_onVlcStateChanged);
-  }
-
-  void _onVlcStateChanged() {
-    if (!mounted) return;
-    setState(() {
-      _isPlaying = _vlcController.value.isPlaying;
-      _isBuffering = _vlcController.value.isBuffering;
-      if (_vlcController.value.hasError) {
-        _errorMessage = _vlcController.value.errorDescription;
-      }
-    });
   }
 
   @override
   void dispose() {
-    _vlcController.removeListener(_onVlcStateChanged);
-    _vlcController.dispose();
-    _tabController.dispose();
     _chatController.dispose();
     _scrollController.dispose();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     super.dispose();
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  // 构建
+  // ════════════════════════════════════════════════════════════════════════
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── 1. 背景：视频区域（全屏） ─────────────────────────────────
+          _buildVideoBackground(),
+
+          // ── 2. 顶部渐变遮罩 ───────────────────────────────────────────
+          _buildTopGradient(),
+
+          // ── 3. 顶部区域 ─────────────────────────────────────────────
+          _buildTopBar(),
+
+          // ── 4. 底部操作栏 ───────────────────────────────────────────
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBottomBar(),
+          ),
+
+          // ── 5. 左下：聊天弹幕区 ─────────────────────────────────────
+          if (!_showInput) _buildDanmakuArea(),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // 区域构建
+  // ════════════════════════════════════════════════════════════════════════
+
+  /// 视频背景区域
+  Widget _buildVideoBackground() {
+    return Container(
+      color: const Color(0xFF1A1A1A),
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.live_tv, size: 64, color: Colors.white24),
+            SizedBox(height: 12),
+            Text(
+              '直播间视频区域',
+              style: TextStyle(color: Colors.white38, fontSize: 14),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '（视频播放器待接入）',
+              style: TextStyle(color: Colors.white24, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 顶部渐变遮罩
+  Widget _buildTopGradient() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 120,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black54, Colors.transparent],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 顶部栏：左上主播信息 + 右上观众+关闭
+  Widget _buildTopBar() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _buildAnchorInfo()),
+            _buildViewerInfo(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 主播信息区域（尺寸已调小）
+  Widget _buildAnchorInfo() {
+    return Row(
+      children: [
+        // 主播头像（小尺寸）
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 1.5),
+          ),
+          child: const CircleAvatar(
+            radius: 18,
+            backgroundColor: Color(0xFF3A3A3A),
+            child: Icon(Icons.person, color: Colors.white70, size: 20),
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        // 名称 + 粉丝数
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '小毛驴的毛…',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '粉丝 938',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.75),
+                  fontSize: 11,
+                  shadows: const [Shadow(color: Colors.black45, blurRadius: 4)],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 关注按钮（小尺寸红色胶囊）
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Text(
+            '关注',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 观众信息区域（头像重叠更紧密）
+  Widget _buildViewerInfo() {
+    return Row(
+      children: [
+        // 观众头像列表（重叠样式，间距更小）
+        SizedBox(
+          width: 70,
+          height: 28,
+          child: Stack(
+            children: [
+              for (int i = 0; i < 3; i++)
+                Positioned(
+                  left: i * 22.0,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: [
+                        Colors.purple[200],
+                        Colors.teal[200],
+                        Colors.orange[200],
+                      ][i],
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+
+        // 在线人数
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.black38,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.visibility, color: Colors.white70, size: 14),
+              SizedBox(width: 4),
+              Text(
+                '8888',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+
+        // 关闭按钮
+        GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              color: Colors.black38,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.close, color: Colors.white, size: 18),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 聊天弹幕区（左下角，每条带半透明黑色背景）
+  Widget _buildDanmakuArea() {
+    return Positioned(
+      left: 8,
+      bottom: 72,
+      width: MediaQuery.of(context).size.width * 0.65,
+      child: SizedBox(
+        height: 200,
+        child: ListView.builder(
+          controller: _scrollController,
+          itemCount: _danmakuList.length,
+          itemBuilder: (context, index) {
+            final item = _danmakuList[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.45),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: item.username,
+                        style: TextStyle(
+                          color: item.color,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const TextSpan(text: '  '),
+                      TextSpan(
+                        text: item.content,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 底部操作栏
+  Widget _buildBottomBar() {
+    if (_showInput) {
+      return _buildInputMode();
+    }
+    return _buildActionBar();
+  }
+
+  /// 普通模式底部操作栏
+  Widget _buildActionBar() {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(8, 0, 8, bottomPadding + 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            Colors.black.withOpacity(0.5),
+            Colors.black.withOpacity(0.7),
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          // ── 输入框（60%宽）+ 表情 ─────────────────────────────────
+          Expanded(
+              child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24, width: 1),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showInput = true),
+                    child: const Text(
+                      '说点什么…',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _showToast('表情面板（待实现）'),
+                  child: const Icon(
+                    Icons.emoji_emotions_outlined,
+                    color: Colors.white70,
+                    size: 22,
+                  ),
+                ),
+              ],
+            ),
+          )),
+
+          const SizedBox(width: 8),
+
+          // 购物车
+          _buildBottomBtn(
+            icon: Icons.shopping_cart_outlined,
+            onTap: () => _showToast('购物车'),
+          ),
+
+          const SizedBox(width: 8),
+
+          // 礼物
+          _buildBottomBtn(
+            icon: Icons.card_giftcard,
+            color: Colors.orange[300]!,
+            onTap: () => _showToast('礼物'),
+          ),
+
+          const SizedBox(width: 8),
+
+          // 分享
+          _buildBottomBtn(
+            icon: Icons.share_outlined,
+            onTap: () => _showToast('分享'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 输入模式底部栏
+  Widget _buildInputMode() {
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.fromLTRB(8, 0, 8, bottomPadding + 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2A2A),
+        border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          // 文本输入框
+          Expanded(
+            child: TextField(
+              controller: _chatController,
+              autofocus: true,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: '说点什么…',
+                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFF3A3A3A),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onSubmitted: (_) => _sendMessage(),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 发送按钮
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.send, color: Colors.white, size: 18),
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // 收起键盘
+          GestureDetector(
+            onTap: () => setState(() => _showInput = false),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: Color(0xFF3A3A3A),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.keyboard_arrow_down,
+                  color: Colors.white70, size: 22),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 底部单个操作按钮
+  Widget _buildBottomBtn({
+    required IconData icon,
+    Color color = Colors.white,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(icon, color: color, size: 22),
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // 交互方法（纯 UI 占位）
+  // ════════════════════════════════════════════════════════════════════════
+
   void _sendMessage() {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _chatMessages.add(const _ChatMessage(
-        username: '我',
-        content: '',
-        color: Colors.red,
-      ).copyWith(content: text));
+      _danmakuList.add(_DanmakuItem('我', text, Colors.red));
+      _chatController.clear();
+      _showInput = false;
     });
-    _chatController.clear();
-    // 自动滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -108,461 +565,27 @@ class _LivePageState extends State<LivePage>
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── 直播视频区域 ──────────────────────────────────────────
-            Expanded(
-              flex: 5,
-              child: _buildVideoArea(),
-            ),
-            // ── 下方互动 Tab 区域 ─────────────────────────────────────
-            Expanded(
-              flex: 4,
-              child: _buildInteractionArea(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // 视频区域
-  // ─────────────────────────────────────────────────────────────────────────
-
-  Widget _buildVideoArea() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // VLC 视频画面
-        VlcPlayer(
-          controller: _vlcController,
-          aspectRatio: 16 / 9,
-          placeholder: _buildLoadingPlaceholder(),
-        ),
-
-        // 加载/缓冲中遮罩
-        if (_isBuffering && !_isPlaying) _buildLoadingPlaceholder(),
-
-        // 未播放时显示播放按钮
-        if (!_isPlaying && !_isBuffering && _errorMessage.isEmpty)
-          Center(
-            child: GestureDetector(
-              onTap: () => _vlcController.play(),
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: Colors.black45,
-                  shape: BoxShape.circle,
-                ),
-                child:
-                    const Icon(Icons.play_arrow, color: Colors.white, size: 48),
-              ),
-            ),
-          ),
-
-        // 错误提示
-        if (_errorMessage.isNotEmpty)
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.signal_wifi_off,
-                      color: Colors.red, size: 48),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '直播连接失败',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.white60, fontSize: 12),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() => _errorMessage = '');
-                      _vlcController.play();
-                    },
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('重新连接'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // 顶部渐变遮罩
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 80,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black54, Colors.transparent],
-              ),
-            ),
-          ),
-        ),
-
-        // 顶部左：返回 + 主播信息
-        Positioned(
-          top: 8,
-          left: 4,
-          right: 56,
-          child: Row(
-            children: [
-              // 返回按钮
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_ios,
-                    color: Colors.white, size: 20),
-                padding: const EdgeInsets.all(8),
-              ),
-              // 主播头像
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.grey[700],
-                child: const Icon(Icons.person, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 8),
-              // 主播名 + 在线人数
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'HK直播',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '1,234 人在看',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(width: 8),
-              // 关注按钮
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  '+ 关注',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // 顶部右：关闭
-        Positioned(
-          top: 8,
-          right: 8,
-          child: IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close, color: Colors.white),
-          ),
-        ),
-
-        // 右侧操作栏
-        Positioned(
-          right: 12,
-          bottom: 16,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildSideAction(Icons.share_outlined, '分享'),
-              const SizedBox(height: 16),
-              _buildSideAction(Icons.favorite_border, '点赞'),
-              const SizedBox(height: 16),
-              _buildSideAction(Icons.volume_up_outlined, '声音'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoadingPlaceholder() {
-    return Container(
-      color: Colors.black,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(
-              width: 36,
-              height: 36,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _isBuffering ? '正在连接直播...' : '等待直播开始',
-              style: const TextStyle(color: Colors.white60, fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSideAction(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: Colors.black38,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            onPressed: () {},
-            icon: Icon(icon, color: Colors.white, size: 20),
-            padding: EdgeInsets.zero,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 10)),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // 互动 Tab 区域
-  // ─────────────────────────────────────────────────────────────────────────
-
-  Widget _buildInteractionArea() {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        children: [
-          // Tab 栏
-          TabBar(
-            controller: _tabController,
-            labelColor: Colors.red,
-            unselectedLabelColor: Colors.grey[600],
-            indicatorColor: Colors.red,
-            indicatorWeight: 2,
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: const [
-              Tab(text: '聊天'),
-              Tab(text: '投票'),
-              Tab(text: '赛况'),
-            ],
-          ),
-
-          // Tab 内容
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildChatView(),
-                _buildPlaceholderView(Icons.how_to_vote_outlined, '投票功能开发中...'),
-                _buildPlaceholderView(
-                    Icons.sports_score_outlined, '赛况功能开发中...'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChatView() {
-    return Column(
-      children: [
-        // 消息列表
-        Expanded(
-          child: Container(
-            color: Colors.grey[50],
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              itemCount: _chatMessages.length,
-              itemBuilder: (context, index) {
-                final msg = _chatMessages[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 7),
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '${msg.username}  ',
-                          style: TextStyle(
-                            color: msg.color,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        TextSpan(
-                          text: msg.content,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        // 输入框
-        Container(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              top: BorderSide(color: Colors.grey[200]!, width: 1),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _chatController,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
-                    decoration: InputDecoration(
-                      hintText: '说点什么...',
-                      hintStyle:
-                          TextStyle(color: Colors.grey[400], fontSize: 13),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child:
-                        const Icon(Icons.send, color: Colors.white, size: 18),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlaceholderView(IconData icon, String text) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 52, color: Colors.grey[300]),
-          const SizedBox(height: 12),
-          Text(text, style: TextStyle(fontSize: 14, color: Colors.grey[400])),
-        ],
+  void _showToast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.grey[800],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 聊天消息模型
+// 数据模型
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _ChatMessage {
+class _DanmakuItem {
   final String username;
   final String content;
   final Color color;
 
-  const _ChatMessage({
-    required this.username,
-    required this.content,
-    required this.color,
-  });
-
-  _ChatMessage copyWith({String? content}) {
-    return _ChatMessage(
-      username: username,
-      content: content ?? this.content,
-      color: color,
-    );
-  }
+  const _DanmakuItem(this.username, this.content, this.color);
 }
