@@ -68,10 +68,10 @@ class _ShortVideoTabState extends State<ShortVideoTab>
           onPageChanged: (index) {
             setState(() => _topTabIndex = index);
             // 切换到同城 tab 时暂停视频
-            if (index == 2) {
-              _feedCtrl.setFeedActive(false);
-            } else {
+            if (index == 1) {
               _feedCtrl.setFeedActive(true);
+            } else {
+              _feedCtrl.setFeedActive(false);
             }
           },
           children: [

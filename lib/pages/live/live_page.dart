@@ -149,15 +149,10 @@ class _LivePageState extends State<LivePage>
           _vlcController.play();
         }
       },
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 1),
-        ),
-        child: VlcPlayer(
-          controller: _vlcController,
-          aspectRatio: 9 / 16,
-          placeholder: _buildLoadingPlaceholder(),
-        ),
+      child: VlcPlayer(
+        controller: _vlcController,
+        aspectRatio: 16 / 9,
+        placeholder: _buildLoadingPlaceholder(),
       ),
     );
   }
