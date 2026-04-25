@@ -26,11 +26,12 @@ class _LivePageState extends State<LivePage> {
 
   // 模拟弹幕数据
   final List<_DanmakuItem> _danmakuList = [
-    const _DanmakuItem('真真不悔', '主播好美呀', Color(0xFFE91E63)),
-    const _DanmakuItem('老班长启玉', '这个笑容我心动了', Color(0xFFFF5722)),
+    const _DanmakuItem(
+        '公告',
+        '直播间严禁黄赌毒，巴拉巴拉爱神的箭拉克斯基的卢卡斯角度来看直播间严禁黄赌毒，巴拉巴拉爱神的箭拉克斯基的卢卡斯角度来看',
+        Colors.white),
     const _DanmakuItem('西二旗华仔', '画质清晰，点赞！', Color(0xFF9C27B0)),
     const _DanmakuItem('小米女神', '第一次来，支持一下', Color(0xFF2196F3)),
-    const _DanmakuItem('回龙观猫猫', '这也太好看了吧', Color(0xFF4CAF50)),
     const _DanmakuItem('北漂小王', '求关注求关注', Color(0xFF00BCD4)),
   ];
 
@@ -152,8 +153,10 @@ class _LivePageState extends State<LivePage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(child: _buildAnchorInfo()),
+            const SizedBox(width: 20),
             _buildViewerInfo(),
           ],
         ),
@@ -232,16 +235,17 @@ class _LivePageState extends State<LivePage> {
   /// 观众信息区域（头像重叠更紧密）
   Widget _buildViewerInfo() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         // 观众头像列表（重叠样式，间距更小）
         SizedBox(
-          width: 70,
+          width: 54,
           height: 28,
           child: Stack(
             children: [
               for (int i = 0; i < 3; i++)
                 Positioned(
-                  left: i * 22.0,
+                  left: i * 12.0,
                   child: Container(
                     width: 28,
                     height: 28,
@@ -264,7 +268,7 @@ class _LivePageState extends State<LivePage> {
             ],
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 2),
 
         // 在线人数
         Container(
@@ -273,23 +277,16 @@ class _LivePageState extends State<LivePage> {
             color: Colors.black38,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.visibility, color: Colors.white70, size: 14),
-              SizedBox(width: 4),
-              Text(
-                '8888',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          child: const Text(
+            '8888',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 2),
 
         // 关闭按钮
         GestureDetector(
@@ -310,11 +307,12 @@ class _LivePageState extends State<LivePage> {
 
   /// 聊天弹幕区（左下角，每条带半透明黑色背景）
   Widget _buildDanmakuArea() {
+    final maxWidth = MediaQuery.of(context).size.width * 0.80;
     return Positioned(
       left: 8,
       bottom: 72,
-      width: MediaQuery.of(context).size.width * 0.65,
       child: SizedBox(
+        width: maxWidth,
         height: 200,
         child: ListView.builder(
           controller: _scrollController,
@@ -323,34 +321,49 @@ class _LivePageState extends State<LivePage> {
             final item = _danmakuList[index];
             return Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: item.username,
-                        style: TextStyle(
-                          color: item.color,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+              child: ConstrainedBox(
+                // Row 先测量文字自然宽度，再限制不超过 maxWidth
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.only(
+                          left: 8,
+                          right: 8,
+                          top: 4,
+                          bottom: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${item.username}：',
+                                style: TextStyle(
+                                  color: item.color,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              TextSpan(
+                                text: item.content,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const TextSpan(text: '  '),
-                      TextSpan(
-                        text: item.content,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
