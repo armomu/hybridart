@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../routes/app_routes.dart';
@@ -35,6 +36,13 @@ class ProfileTab extends StatelessWidget {
             _buildUserInfo(context),
             const SizedBox(height: 16),
             _buildFeatureGrid(context),
+            const SizedBox(height: 20),
+            _buildPersonalization(context),
+            const SizedBox(height: 12),
+            _buildDeviceInfo(context),
+            const SizedBox(height: 12),
+            _buildBatteryManager(context),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -192,6 +200,304 @@ class ProfileTab extends StatelessWidget {
       ),
     );
   }
+
+  // ==================== 个性化区域 ====================
+  Widget _buildPersonalization(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        elevation: 2,
+        color: cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            children: [
+              // 标题行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '个性化',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  GestureDetector(
+                    onTap: () => ScaffoldMessenger.of(context)
+                        .showSnackBar(const SnackBar(content: Text('查看个性化设置'))),
+                    child: Text(
+                      '查看',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // 两个功能项
+              Row(
+                children: [
+                  _buildPersonalizationItem(
+                    context,
+                    icon: Icons.shield_outlined,
+                    label: '权限管理',
+                    onTap: () => ScaffoldMessenger.of(context)
+                        .showSnackBar(const SnackBar(content: Text('权限管理'))),
+                  ),
+                  const SizedBox(width: 24),
+                  _buildPersonalizationItem(
+                    context,
+                    icon: Icons.mic_outlined,
+                    label: '语音助手',
+                    onTap: () => ScaffoldMessenger.of(context)
+                        .showSnackBar(const SnackBar(content: Text('语音助手'))),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPersonalizationItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== 设备信息卡片 ====================
+  Widget _buildDeviceInfo(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        elevation: 2,
+        color: cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            children: [
+              // 标题行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '设备信息',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 三列数据
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildDeviceMetric(
+                    context,
+                    icon: Icons.memory,
+                    label: 'CPU占用',
+                    value: '1%',
+                    valueColor: const Color(0xFF333333),
+                  ),
+                  _buildDeviceMetricDivider(context),
+                  _buildDeviceMetric(
+                    context,
+                    icon: Icons.speed,
+                    label: '内存占用',
+                    value: '95%',
+                    valueColor: Colors.orange,
+                  ),
+                  _buildDeviceMetricDivider(context),
+                  _buildDeviceMetric(
+                    context,
+                    icon: Icons.storage_outlined,
+                    label: '剩余存储',
+                    value: '52.7 GB',
+                    valueColor: const Color(0xFF333333),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeviceMetric(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color valueColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      children: [
+        Icon(icon, size: 22, color: isDark ? Colors.white70 : Colors.grey[700]),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? _adaptColor(valueColor) : valueColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeviceMetricDivider(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 40,
+      color: Theme.of(context).dividerColor.withOpacity(0.5),
+    );
+  }
+
+  Color _adaptColor(Color color) {
+    // 简单适配深色模式：橙色保持，黑色变白
+    if (color == const Color(0xFF333333)) return Colors.white;
+    return color;
+  }
+
+  // ==================== 电池管家卡片 ====================
+  Widget _buildBatteryManager(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+    const batteryPercent = 79;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        elevation: 2,
+        color: cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            children: [
+              // 标题行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '电池管家',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // 顶部信息行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '电池剩余 $batteryPercent%',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    '预计可用: 19小时37分钟',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white54 : Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // 半圆环进度条 + 百分比
+              SizedBox(
+                height: 100,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 半圆环
+                    SizedBox(
+                      width: 140,
+                      height: 80,
+                      child: CustomPaint(
+                        painter: _SemiCircleProgressPainter(
+                          progress: batteryPercent / 100,
+                          progressColor: const Color(0xFF4CAF50),
+                          trackColor: isDark
+                              ? const Color(0xFF3A3A3A)
+                              : const Color(0xFFEEEEEE),
+                          strokeWidth: 12,
+                        ),
+                      ),
+                    ),
+                    // 百分比数字（圆环下方）
+                    Positioned(
+                      bottom: 0,
+                      child: Text(
+                        '$batteryPercent%',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FeatureItem {
@@ -204,4 +510,62 @@ class _FeatureItem {
     required this.label,
     required this.onTap,
   });
+}
+
+/// 半圆环进度条 Painter
+class _SemiCircleProgressPainter extends CustomPainter {
+  final double progress;
+  final Color progressColor;
+  final Color trackColor;
+  final double strokeWidth;
+
+  _SemiCircleProgressPainter({
+    required this.progress,
+    required this.progressColor,
+    required this.trackColor,
+    this.strokeWidth = 12,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // 背景轨道（半圆弧）
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      math.pi,
+      math.pi,
+      false,
+      trackPaint,
+    );
+
+    // 进度弧（从左到右，即 π → 0 方向）
+    final progressPaint = Paint()
+      ..color = progressColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final sweepAngle = math.pi * progress.clamp(0.0, 1.0);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      math.pi,
+      sweepAngle,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SemiCircleProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.progressColor != progressColor;
+  }
 }
