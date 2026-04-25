@@ -45,20 +45,24 @@ class _LivePageState extends State<LivePage> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top], // 只显示顶部
     );
+    // SystemChrome.setSystemUIOverlayStyle(
+    //   const SystemUiOverlayStyle(
+    //     statusBarColor: Colors.transparent, // 顶部透明
+    //     systemNavigationBarColor: Colors.transparent, // 底部透明
+    //     systemNavigationBarIconBrightness: Brightness.dark, // 图标颜色
+    //     statusBarIconBrightness: Brightness.dark,
+    //   ),
+    // );
   }
 
   @override
   void dispose() {
     _chatController.dispose();
     _scrollController.dispose();
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     super.dispose();
   }
 
@@ -69,8 +73,8 @@ class _LivePageState extends State<LivePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      resizeToAvoidBottomInset: true,
+      backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -105,7 +109,7 @@ class _LivePageState extends State<LivePage> {
   /// 视频背景区域
   Widget _buildVideoBackground() {
     return Container(
-      color: const Color(0xFF1A1A1A),
+      color: const Color.fromARGB(255, 94, 217, 231),
       child: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -290,7 +294,11 @@ class _LivePageState extends State<LivePage> {
 
         // 关闭按钮
         GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () {
+            // 恢复默认系统UI模式（显示导航栏）
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            Navigator.of(context).pop();
+          },
           child: Container(
             width: 32,
             height: 32,
@@ -383,20 +391,11 @@ class _LivePageState extends State<LivePage> {
 
   /// 普通模式底部操作栏
   Widget _buildActionBar() {
+    // 沉浸模式下系统导航栏隐藏，使用固定安全间距
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final safePadding = bottomPadding > 0 ? bottomPadding : 16.0;
     return Container(
-      padding: EdgeInsets.fromLTRB(8, 0, 8, bottomPadding + 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withOpacity(0.5),
-            Colors.black.withOpacity(0.7),
-          ],
-        ),
-      ),
+      padding: EdgeInsets.fromLTRB(8, 0, 8, safePadding + 8),
       child: Row(
         children: [
           // ── 输入框（60%宽）+ 表情 ─────────────────────────────────
@@ -464,9 +463,11 @@ class _LivePageState extends State<LivePage> {
   /// 输入模式底部栏
   Widget _buildInputMode() {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final safePadding = MediaQuery.of(context).padding.bottom;
+    final totalPadding = bottomPadding + (safePadding > 0 ? safePadding : 8.0);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: EdgeInsets.fromLTRB(8, 0, 8, bottomPadding + 8),
+      padding: EdgeInsets.fromLTRB(8, 0, 8, totalPadding),
       decoration: BoxDecoration(
         color: const Color(0xFF2A2A2A),
         border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),

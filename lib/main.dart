@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'routes/app_routes.dart';
@@ -7,7 +8,18 @@ import 'theme/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: [SystemUiOverlay.top], // 只显示顶部
+  );
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // 顶部透明
+      systemNavigationBarColor: Colors.transparent, // 底部透明
+      systemNavigationBarIconBrightness: Brightness.dark, // 图标颜色
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
   // 初始化 GetStorage（用于本地存储）
   await GetStorage.init();
 
