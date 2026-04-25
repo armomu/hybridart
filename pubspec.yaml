@@ -49,6 +49,9 @@ dependencies:
   # 蓝牙 BLE，支持扫描/连接/读写特征
   flutter_blue_plus: ^1.35.3
 
+  # Lottie 动画播放
+  lottie: ^3.1.0
+
   # 文件选择（OTA 升级包选择）
   file_picker: ^8.0.5
 
@@ -78,10 +81,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  # Lottie 动画资源
+  assets:
+    - lib/lotties/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

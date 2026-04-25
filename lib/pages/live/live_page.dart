@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'gift_lottie_overlay.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 直播间页面（纯 UI 展示版）
@@ -445,7 +447,7 @@ class _LivePageState extends State<LivePage> {
           _buildBottomBtn(
             icon: Icons.card_giftcard,
             color: Colors.orange[300]!,
-            onTap: () => _showToast('礼物'),
+            onTap: () => _showGiftSheet(),
           ),
 
           const SizedBox(width: 8),
@@ -467,7 +469,7 @@ class _LivePageState extends State<LivePage> {
     final totalPadding = bottomPadding + (safePadding > 0 ? safePadding : 8.0);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: EdgeInsets.fromLTRB(8, 0, 8, totalPadding),
+      padding: EdgeInsets.fromLTRB(8, 8, 8, totalPadding),
       decoration: BoxDecoration(
         color: const Color(0xFF2A2A2A),
         border: Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5)),
@@ -589,6 +591,17 @@ class _LivePageState extends State<LivePage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
+  }
+
+  /// 显示礼物选择面板
+  void _showGiftSheet() {
+    GiftBottomSheet.show(context, (gift) {
+      // 关闭 bottomSheet 后播放动画
+      // 延迟一点确保 bottomSheet 已经关闭
+      Future.delayed(const Duration(milliseconds: 100), () {
+        LottieOverlayManager.playGiftAnimation(context, gift);
+      });
+    });
   }
 }
 
