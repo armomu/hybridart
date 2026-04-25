@@ -13,15 +13,7 @@ class LifecycleTestWidget extends StatefulWidget {
 
   @override
   State<LifecycleTestWidget> createState() {
-    _addLog('⚡ createState - 创建 State 对象');
     return _LifecycleTestWidgetState();
-  }
-
-  /// 辅助方法：安全地添加日志
-  static void _addLog(String message) {
-    if (Get.isRegistered<LifecycleController>()) {
-      Get.find<LifecycleController>().addLog(message);
-    }
   }
 }
 

@@ -111,17 +111,17 @@ final List<VideoData> videoList = [
 // 视频流控制器 — 关注/精选共享
 // ══════════════════════════════════════════════════════════════════════════
 
-class VideoFeedController {
+class VideoFeedController extends GetxController {
   int currentPage = 0;
-  bool isFeedActive = false;
+
+  /// Rx 响应式变量：feed 是否处于活跃（当前显示中的 tab）
+  final RxBool isFeedActive = false.obs;
 
   void onPageChanged(int index) => currentPage = index;
 
   /// 通知 Feed 是否处于活跃状态（当前显示的 tab）
   void setFeedActive(bool active) {
-    if (isFeedActive != active) {
-      isFeedActive = active;
-    }
+    isFeedActive.value = active;
   }
 }
 
@@ -176,17 +176,14 @@ class _VideoFeedViewState extends State<VideoFeedView>
   @override
   void didUpdateWidget(covariant VideoFeedView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    debugPrint('didUpdateWidget=============');
-    debugPrint(
-        '$_isViewVisible isFeedActive: ${widget.controller.isFeedActive} ==== ${widget.controller.currentPage}');
   }
+
+
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    debugPrint(
-        '==================$_isViewVisible isFeedActive: ${widget.controller.isFeedActive} ==== ${widget.controller.currentPage}');
     return VisibilityDetector(
       onVisibilityChanged: _onVisibilityChanged,
       child: PageView.builder(
@@ -198,13 +195,17 @@ class _VideoFeedViewState extends State<VideoFeedView>
           setState(() {});
         },
         itemBuilder: (context, index) {
-          // 当 Feed 不活跃时（切换到其他 tab），强制 isActive = false
-          return VideoPage(
-            data: videoList[index],
-            isActive: widget.controller.isFeedActive &&
-                (index == widget.controller.currentPage),
-            lazyLoad: !_isViewVisible,
-          );
+          // 用 Obx 监听 isFeedActive 变化，确保 isFeedActive 变化时触发 VideoPage rebuild
+          return Obx(() {
+            final active = widget.controller.isFeedActive.value &&
+                (index == widget.controller.currentPage);
+            return VideoPage(
+              key: ValueKey('video_$index'),
+              data: videoList[index],
+              isActive: active,
+              lazyLoad: !_isViewVisible,
+            );
+          });
         },
       ),
     );
@@ -242,8 +243,6 @@ class _VideoPageState extends State<VideoPage> {
   @override
   void initState() {
     super.initState();
-    debugPrint(
-        '视频初始化1:${widget.data.url}  lazyLoad:${widget.lazyLoad}  isActive:${widget.isActive}');
     if (!widget.lazyLoad) {
       _initVideo();
     }
@@ -252,17 +251,20 @@ class _VideoPageState extends State<VideoPage> {
   @override
   void didUpdateWidget(VideoPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.lazyLoad &&
-        widget.isActive &&
-        !oldWidget.isActive &&
-        !_initialized) {
-      _initVideo();
+
+    if (!_initialized) {
+      // 尚未初始化时，满足以下任一条件就触发初始化：
+      // 1. isActive 从 false → true，且不需要懒加载
+      // 2. lazyLoad 从 true → false（视图变可见），且当前是活跃页
+      final becameActiveNoLazy = widget.isActive && !oldWidget.isActive && !widget.lazyLoad;
+      final lazyLiftedAndActive = widget.isActive && oldWidget.lazyLoad && !widget.lazyLoad;
+      if (becameActiveNoLazy || lazyLiftedAndActive) {
+        _initVideo();
+      }
+      return;
     }
-    debugPrint(
-        'isActive:${widget.isActive}, oldWidget.isActive：${oldWidget.isActive}, lazyLoad:${widget.lazyLoad}, _initialized:$_initialized');
-    debugPrint(
-        'didUpdateWidget 2 ============================================================');
-    if (!_initialized) return;
+
+    // 已初始化：根据 isActive 变化播放/暂停
     if (widget.isActive && !oldWidget.isActive) {
       _controller?.play();
       setState(() => _isPlaying = true);
@@ -272,7 +274,6 @@ class _VideoPageState extends State<VideoPage> {
   }
 
   Future<void> _initVideo() async {
-    debugPrint('_initVideo:$_controller === ====');
     if (_controller != null) return;
     try {
       _controller = VideoPlayerController.networkUrl(
