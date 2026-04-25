@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hybridart/pages/ble_demo/ble_demo_controller.dart';
+import 'package:hybridart/pages/home/tabs/video_feed_view.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/short_video_tab.dart';
 import 'tabs/message_tab.dart';
@@ -27,6 +28,9 @@ class _HomePageState extends State<HomePage> {
   final Map<int, Widget> _tabPages = {};
 
   final ctrl = Get.put(BleDemoController());
+
+  /// 视频 Feed 控制器（全局共享）
+  final videoFeedCtrl = Get.put(VideoFeedController());
 
   /// navIndex → 页面索引（+号占位不对应页面，跳过）
   int _navIndexToPageIndex(int navIndex) {
@@ -67,6 +71,9 @@ class _HomePageState extends State<HomePage> {
       _tabLoaded[navIndex] = true;
       debugPrint('Tab $navIndex 首次加载');
     }
+
+    // 更新视频 Feed 活跃状态：只有短视频 tab 时才激活
+    videoFeedCtrl.setFeedActive(navIndex == 1);
 
     setState(() {
       _currentIndex = navIndex;

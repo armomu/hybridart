@@ -70,15 +70,6 @@ class VideoData {
 // 视频数据列表
 final List<VideoData> videoList = [
   const VideoData(
-    url: 'https://www.pexels.com/zh-cn/download/video/37235780/',
-    username: '@小猫咪',
-    desc: '小猫咪，请给我来点cats~ 🐱',
-    likes: 35640,
-    comments: 13280,
-    favorites: 8520,
-    shares: 6720,
-  ),
-  const VideoData(
     url: 'https://www.w3schools.com/html/mov_bbb.mp4',
     username: '@蝴蝶记录者',
     desc: '诗和远方，一起去旅行吧~ 🌊',
@@ -86,6 +77,15 @@ final List<VideoData> videoList = [
     comments: 5200,
     favorites: 3300,
     shares: 2100,
+  ),
+  const VideoData(
+    url: 'https://www.pexels.com/zh-cn/download/video/37235780/',
+    username: '@小猫咪',
+    desc: '小猫咪，请给我来点cats~ 🐱',
+    likes: 35640,
+    comments: 13280,
+    favorites: 8520,
+    shares: 6720,
   ),
   const VideoData(
     url: 'https://www.pexels.com/download/video/33538187/',
@@ -116,6 +116,13 @@ class VideoFeedController {
   bool isFeedActive = false;
 
   void onPageChanged(int index) => currentPage = index;
+
+  /// 通知 Feed 是否处于活跃状态（当前显示的 tab）
+  void setFeedActive(bool active) {
+    if (isFeedActive != active) {
+      isFeedActive = active;
+    }
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -167,8 +174,19 @@ class _VideoFeedViewState extends State<VideoFeedView>
   }
 
   @override
+  void didUpdateWidget(covariant VideoFeedView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    debugPrint('didUpdateWidget=============');
+    debugPrint(
+        '$_isViewVisible isFeedActive: ${widget.controller.isFeedActive} ==== ${widget.controller.currentPage}');
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    debugPrint(
+        '==================$_isViewVisible isFeedActive: ${widget.controller.isFeedActive} ==== ${widget.controller.currentPage}');
     return VisibilityDetector(
       onVisibilityChanged: _onVisibilityChanged,
       child: PageView.builder(
@@ -180,9 +198,11 @@ class _VideoFeedViewState extends State<VideoFeedView>
           setState(() {});
         },
         itemBuilder: (context, index) {
+          // 当 Feed 不活跃时（切换到其他 tab），强制 isActive = false
           return VideoPage(
             data: videoList[index],
-            isActive: index == widget.controller.currentPage,
+            isActive: widget.controller.isFeedActive &&
+                (index == widget.controller.currentPage),
             lazyLoad: !_isViewVisible,
           );
         },
@@ -222,6 +242,8 @@ class _VideoPageState extends State<VideoPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint(
+        '视频初始化1:${widget.data.url}  lazyLoad:${widget.lazyLoad}  isActive:${widget.isActive}');
     if (!widget.lazyLoad) {
       _initVideo();
     }
@@ -236,6 +258,10 @@ class _VideoPageState extends State<VideoPage> {
         !_initialized) {
       _initVideo();
     }
+    debugPrint(
+        'isActive:${widget.isActive}, oldWidget.isActive：${oldWidget.isActive}, lazyLoad:${widget.lazyLoad}, _initialized:$_initialized');
+    debugPrint(
+        'didUpdateWidget 2 ============================================================');
     if (!_initialized) return;
     if (widget.isActive && !oldWidget.isActive) {
       _controller?.play();
@@ -246,6 +272,7 @@ class _VideoPageState extends State<VideoPage> {
   }
 
   Future<void> _initVideo() async {
+    debugPrint('_initVideo:$_controller === ====');
     if (_controller != null) return;
     try {
       _controller = VideoPlayerController.networkUrl(
@@ -328,6 +355,7 @@ class _VideoPageState extends State<VideoPage> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _togglePlay,
+      onDoubleTap: () {},
       child: Stack(
         fit: StackFit.expand,
         children: [

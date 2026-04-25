@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
 
     return Obx(() => GetMaterialApp(
           title: 'HybridArt - GetX 示例',
-          debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner: true,
 
           // ==================== 主题配置 ====================
           theme: AppTheme.lightTheme,

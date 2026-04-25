@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'video_feed_view.dart';
 import 'nearby_view.dart';
 
@@ -15,30 +16,42 @@ class ShortVideoTab extends StatefulWidget {
 }
 
 class _ShortVideoTabState extends State<ShortVideoTab>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   int _topTabIndex = 1; // 默认「精选」
   late PageController _tabPageController;
 
   @override
   bool get wantKeepAlive => true;
 
+  /// 「关注」和「精选」共用同一个视频 Feed
+  /// 使用 GetX 全局控制器，确保 HomePage 和 ShortVideoTab 共享同一实例
+  VideoFeedController get _feedCtrl => Get.find<VideoFeedController>();
+
   @override
   void initState() {
     super.initState();
     _tabPageController = PageController(initialPage: 1);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabPageController.dispose();
     super.dispose();
   }
 
-  /// 「关注」和「精选」共用同一个视频 Feed
-  VideoFeedController? _sharedFeedController;
-
-  VideoFeedController _getSharedFeedController() {
-    return _sharedFeedController ??= VideoFeedController();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // 应用进入后台或切到其他大 Tab 时，暂停视频
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _feedCtrl.setFeedActive(false);
+    } else if (state == AppLifecycleState.resumed) {
+      // 应用回到前台，检查是否当前 tab
+      // 这里不自动激活，由 HomePage 的 tab 切换逻辑控制
+    }
   }
 
   @override
@@ -54,14 +67,18 @@ class _ShortVideoTabState extends State<ShortVideoTab>
           controller: _tabPageController,
           onPageChanged: (index) {
             setState(() => _topTabIndex = index);
+            // 切换到同城 tab 时暂停视频
+            if (index == 2) {
+              _feedCtrl.setFeedActive(false);
+            } else {
+              _feedCtrl.setFeedActive(true);
+            }
           },
           children: [
             // 关注 — 与精选共用视频流
-            VideoFeedView(
-                controller: _getSharedFeedController(), tabIndex: _topTabIndex),
+            VideoFeedView(controller: _feedCtrl, tabIndex: _topTabIndex),
             // 精选 — 与关注共用视频流
-            VideoFeedView(
-                controller: _getSharedFeedController(), tabIndex: _topTabIndex),
+            VideoFeedView(controller: _feedCtrl, tabIndex: _topTabIndex),
             // 同城 — 瀑布流布局（由 NearbyView 自行处理顶部偏移）
             NearbyView(),
           ],
