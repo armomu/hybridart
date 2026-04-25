@@ -49,7 +49,7 @@ class _LivePageState extends State<LivePage>
   void _initVlcPlayer() {
     _vlcController = VlcPlayerController.network(
       'rtmp://ns8.indexforce.com/home/mystream',
-      autoPlay: true,
+      autoPlay: false,
       hwAcc: HwAcc.full,
       options: VlcPlayerOptions(
         rtp: VlcRtpOptions([
@@ -241,10 +241,10 @@ class _LivePageState extends State<LivePage>
         Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 1.5),
+            border: Border.all(color: Colors.white, width: 1),
           ),
           child: const CircleAvatar(
-            radius: 18,
+            radius: 16,
             backgroundColor: Color(0xFF3A3A3A),
             child: Icon(Icons.person, color: Colors.white70, size: 20),
           ),
@@ -252,35 +252,33 @@ class _LivePageState extends State<LivePage>
         const SizedBox(width: 8),
 
         // 名称 + 粉丝数
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '小毛驴的毛…',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '小毛驴的毛…',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
               ),
-              const SizedBox(height: 2),
-              Text(
-                '粉丝 938',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.75),
-                  fontSize: 11,
-                  shadows: const [Shadow(color: Colors.black45, blurRadius: 4)],
-                ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '粉丝 938',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.75),
+                fontSize: 10,
+                shadows: const [Shadow(color: Colors.black45, blurRadius: 4)],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-
+        const SizedBox(width: 8),
         // 关注按钮（小尺寸红色胶囊）
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
