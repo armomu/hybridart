@@ -8,17 +8,17 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的'),
-        actions: [
-          // 设置按钮
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: '设置',
-            onPressed: () => Get.toNamed(Routes.settings),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        title: const Text(
+          '',
+          style: TextStyle(
+            fontSize: 32,
           ),
-        ],
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -42,36 +42,138 @@ class ProfileTab extends StatelessWidget {
   Widget _buildUserInfo(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.25),
-      ),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Stack(
         children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: const Icon(Icons.person, size: 40, color: Colors.white),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
+          // 左侧：用户信息
+          Container(
+            padding: const EdgeInsets.only(top: 50),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 用户名
                 const Text(
-                  '用户名称',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  'Candy Teacher',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // 糖果币标签行
+                Row(
+                  children: [
+                    // 糖果图标
+                    const Icon(
+                      Icons.ice_skating,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '糖果币',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'ID: 10086',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                // 糖果币数值 + 提现按钮行
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 数值
+                    const Text(
+                      '1923',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                    ),
+                    // 立即提现按钮
+                    _buildWithdrawButton(context),
+                  ],
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.grey),
+          // 右上角：头像
+          Positioned(
+            top: 0,
+            right: 10,
+            child: GestureDetector(
+              onTap: () => Get.toNamed(Routes.settings),
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: Colors.grey[200],
+                  image: const DecorationImage(
+                    image:
+                        NetworkImage('https://picsum.photos/seed/user/200/200'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWithdrawButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('立即提现')),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ¥ 图标（圆形背景）
+            Container(
+              width: 18,
+              height: 18,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Text(
+                  '¥',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFE84D7B),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              '立即提现',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -200,7 +302,7 @@ class ProfileTab extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
-        elevation: 2,
+        elevation: 0,
         color: cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
@@ -208,25 +310,22 @@ class ProfileTab extends StatelessWidget {
           child: Column(
             children: [
               // 标题行
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '个性化',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  GestureDetector(
-                    onTap: () => ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(content: Text('查看个性化设置'))),
-                    child: Text(
-                      '查看',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+              GestureDetector(
+                onTap: () {
+                  Get.toNamed(Routes.settings);
+                },
+                behavior: HitTestBehavior.translucent,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '设置',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
+                    Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
               // 两个功能项
@@ -301,7 +400,7 @@ class ProfileTab extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
-        elevation: 2,
+        elevation: 0,
         color: cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
@@ -410,7 +509,7 @@ class ProfileTab extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
-        elevation: 2,
+        elevation: 0,
         color: cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
