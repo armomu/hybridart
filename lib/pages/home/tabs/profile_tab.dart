@@ -12,16 +12,6 @@ class ProfileTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('我的'),
         actions: [
-          // 扫一扫按钮
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
-            tooltip: '扫一扫',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('扫一扫')),
-              );
-            },
-          ),
           // 设置按钮
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -34,8 +24,8 @@ class ProfileTab extends StatelessWidget {
         child: Column(
           children: [
             _buildUserInfo(context),
-            const SizedBox(height: 16),
-            _buildFeatureGrid(context),
+            // const SizedBox(height: 16),
+            // _buildFeatureGrid(context),
             const SizedBox(height: 20),
             _buildPersonalization(context),
             const SizedBox(height: 12),
@@ -319,14 +309,14 @@ class ProfileTab extends StatelessWidget {
           child: Column(
             children: [
               // 标题行
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '设备信息',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                  Icon(Icons.chevron_right, size: 20, color: Colors.grey),
                 ],
               ),
               const SizedBox(height: 16),
@@ -389,7 +379,8 @@ class ProfileTab extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey[600]),
+          style: TextStyle(
+              fontSize: 12, color: isDark ? Colors.white54 : Colors.grey[600]),
         ),
       ],
     );
@@ -427,14 +418,14 @@ class ProfileTab extends StatelessWidget {
           child: Column(
             children: [
               // 标题行
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '电池管家',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                  Icon(Icons.chevron_right, size: 20, color: Colors.grey),
                 ],
               ),
               const SizedBox(height: 12),
@@ -478,11 +469,11 @@ class ProfileTab extends StatelessWidget {
                       ),
                     ),
                     // 百分比数字（圆环下方）
-                    Positioned(
+                    const Positioned(
                       bottom: 0,
                       child: Text(
                         '$batteryPercent%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF333333),

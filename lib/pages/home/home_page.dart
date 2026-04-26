@@ -110,8 +110,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildBottomNavBar(BuildContext context) {
     // 短视频Tab选中时，底部导航栏使用深色背景
     final isVideoTab = _currentIndex == 1;
-    final bgColor = isVideoTab ? Colors.black : Theme.of(context).colorScheme.surface;
-    final shadowColor = isVideoTab ? Colors.transparent : Colors.black.withOpacity(0.08);
+    final bgColor =
+        isVideoTab ? Colors.black : Theme.of(context).colorScheme.surface;
+    final shadowColor =
+        isVideoTab ? Colors.transparent : Colors.black.withOpacity(0.08);
 
     return Container(
       decoration: BoxDecoration(
@@ -175,11 +177,13 @@ class _HomePageState extends State<HomePage> {
   }) {
     final bool isActive = _currentIndex == navIndex;
     final isLoaded = _tabLoaded[navIndex] ?? false;
-    // 短视频Tab选中时，使用浅色图标；其他Tab使用主题色
+    // 短视频Tab选中时，使用浅色文字；其他Tab使用主题色
     final bool isDarkBg = _currentIndex == 1;
     final color = isDarkBg
         ? (isActive ? Colors.white : Colors.white70)
-        : (isActive ? Theme.of(context).colorScheme.primary : Colors.grey[600]!);
+        : (isActive
+            ? Theme.of(context).colorScheme.primary
+            : Colors.grey[600]!);
 
     return Expanded(
       child: InkWell(
@@ -191,7 +195,14 @@ class _HomePageState extends State<HomePage> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(isActive ? activeIcon : icon, color: color, size: 24),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: isActive ? 17 : 15,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
                 // 小红点提示未读（可选）
                 if (!isLoaded)
                   Positioned(
@@ -208,11 +219,6 @@ class _HomePageState extends State<HomePage> {
                   ),
               ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(fontSize: 11, color: color),
-            ),
           ],
         ),
       ),
@@ -225,13 +231,13 @@ class _HomePageState extends State<HomePage> {
         onTap: () => _onTabTapped(2),
         child: Center(
           child: Container(
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.add, color: Colors.white, size: 26),
+            child: const Icon(Icons.add, color: Colors.white, size: 22),
           ),
         ),
       ),
