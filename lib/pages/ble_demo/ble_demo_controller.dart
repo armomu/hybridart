@@ -156,8 +156,9 @@ class BleDemoController extends GetxController {
           if (char.properties.notify || char.properties.indicate) {
             await char.setNotifyValue(true);
             _notifySub?.cancel();
-            _notifySub = char.onValueReceived
-                .listen((value) => _handleNotification(value));
+            _notifySub = char.onValueReceived.listen(
+              (value) => _handleNotification(value),
+            );
           }
         }
       }
